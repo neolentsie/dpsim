@@ -67,6 +67,43 @@ void DP::Ph1::SynchronGeneratorVBR::calculateAuxiliarVariables() {
 	mKvbr(0,1) = -Complex(cos(mThetaMech - mBase_OmMech * mSimTime - PI/2.), sin(mThetaMech - mBase_OmMech * mSimTime - PI/2.));
 }
 
+static void setVariableEntries(std::vector<std::pair<UInt, UInt>>& list, Int n, UInt rowIndex, UInt colIndex, Int maxFreq = 1, Int freqIdx = 0) {
+	// Assume square matrix
+	UInt harmonicOffset = n / maxFreq;
+	UInt complexOffset = harmonicOffset / 2;
+	UInt harmRow = rowIndex + harmonicOffset * freqIdx;
+	UInt harmCol = colIndex + harmonicOffset * freqIdx;
+
+	list.push_back(std::make_pair<UInt, UInt>(rowIndex+0, colIndex+0));
+	list.push_back(std::make_pair<UInt, UInt>(rowIndex + complexOffset, colIndex + complexOffset));
+	list.push_back(std::make_pair<UInt, UInt>(rowIndex+0, colIndex + complexOffset));
+	list.push_back(std::make_pair<UInt, UInt>(rowIndex + complexOffset, colIndex+0));
+}
+
+void DP::Ph1::SynchronGeneratorVBR::mnaInitialize(Real omega, 
+		Real timeStep, Attribute<Matrix>::Ptr leftVector) {
+
+	Base::ReducedOrderSynchronGenerator<Complex>::mnaInitialize(omega, timeStep, leftVector);
+
+	// TODO: FIX
+	Int n = 54;
+	
+	// upper left
+	setVariableEntries(mVariableSystemMatrixEntries, n, mVirtualNodes[0]->matrixNodeIndex(), mVirtualNodes[0]->matrixNodeIndex());
+
+	// bottom right
+	setVariableEntries(mVariableSystemMatrixEntries, n, matrixNodeIndex(0, 0), matrixNodeIndex(0, 0));
+
+	// off-diagonal
+	setVariableEntries(mVariableSystemMatrixEntries, n, mVirtualNodes[0]->matrixNodeIndex(), matrixNodeIndex(0, 0));
+	setVariableEntries(mVariableSystemMatrixEntries, n, matrixNodeIndex(0, 0), mVirtualNodes[0]->matrixNodeIndex());
+	
+	mSLog->info("List of index pairs of varying matrix entries: ");
+	for (auto indexPair : mVariableSystemMatrixEntries)
+		mSLog->info("({}, {})", indexPair.first, indexPair.second);
+
+}
+
 void DP::Ph1::SynchronGeneratorVBR::mnaApplySystemMatrixStamp(Matrix& systemMatrix) {
 	// Stamp voltage source
 	Math::setMatrixElement(systemMatrix, mVirtualNodes[0]->matrixNodeIndex(), mVirtualNodes[1]->matrixNodeIndex(), Complex(-1, 0));
@@ -77,10 +114,10 @@ void DP::Ph1::SynchronGeneratorVBR::mnaApplySystemMatrixStamp(Matrix& systemMatr
 	// set upper left block
 	Math::addToMatrixElement(systemMatrix, mVirtualNodes[0]->matrixNodeIndex(), mVirtualNodes[0]->matrixNodeIndex(), mConductanceMatrix);
 
-	// set buttom right block
+	// set bottom right block
 	Math::addToMatrixElement(systemMatrix, matrixNodeIndex(0, 0), matrixNodeIndex(0, 0), mConductanceMatrix);
 
-	// Set off diagonal blocks
+	// Set off-diagonal blocks
 	Math::addToMatrixElement(systemMatrix, mVirtualNodes[0]->matrixNodeIndex(), matrixNodeIndex(0, 0), -mConductanceMatrix);
 	Math::addToMatrixElement(systemMatrix, matrixNodeIndex(0, 0), mVirtualNodes[0]->matrixNodeIndex(), -mConductanceMatrix);
 }
