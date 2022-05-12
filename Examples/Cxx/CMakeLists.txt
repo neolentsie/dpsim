@@ -67,6 +67,13 @@ set(CIRCUIT_SOURCES
 	Circuits/SP_SynGenTrStab_SMIB_Fault_KundurExample1.cpp
 	Circuits/EMT_SynGenVBR_OperationalParams_SMIB_Fault.cpp
 	Circuits/EMT_SynGenVBR_SMIB_Fault.cpp
+	Circuits/SP_ReducedOrderSG_SMIB_Fault.cpp
+	Circuits/DP_ReducedOrderSG_SMIB_Fault.cpp
+	Circuits/EMT_ReducedOrderSG_SMIB_Fault.cpp
+	Circuits/SP_ReducedOrderSG_VBR_Load_Fault.cpp
+	Circuits/DP_ReducedOrderSG_VBR_Load_Fault.cpp
+	Circuits/EMT_ReducedOrderSG_VBR_Load_Fault.cpp
+	Circuits/SP_SynGen4OrderDCIM_SMIB_Fault.cpp
 
 	#3Bus System
 	Circuits/SP_SynGenTrStab_3Bus_SteadyState.cpp
@@ -132,8 +139,11 @@ if(WITH_CIM)
 		CIM/EMT_WSCC-9bus_FullOrderSG.cpp
 		CIM/EMT_WSCC-9bus_VBR.cpp
 		CIM/DP_WSCC-9bus_IdealVS.cpp
+
+		# WSCC Reduced Order
+		CIM/SP_WSCC9bus_SGReducedOrderVBR.cpp
+		CIM/EMT_WSCC9bus_SGReducedOrderVBR.cpp	
 		CIM/DP_WSCC9bus_SGReducedOrderVBR.cpp
-		CIM/EMT_WSCC9bus_SGReducedOrderVBR.cpp
 
 		# PF(Power Flow) example
 		CIM/Slack_Trafo_Load.cpp
