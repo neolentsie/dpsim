@@ -18,6 +18,7 @@
 #include <dpsim/MNASolverEigenNICSLU.h>
 #include <dpsim/MNASolverEigenPartialNICSLU.h>
 #include <dpsim/MNASolverEigenPartialNICSLU_FP.h>
+#include <dpsim/MNASolverEigenPartialNICSLU_BRA.h>
 #endif
 #ifdef WITH_CUDA
 	#include <dpsim/MNASolverGpuDense.h>
@@ -42,6 +43,7 @@ class MnaSolverFactory {
 		EigenNICSLU,
 		EigenPartialNICSLU,
 		EigenPartialNICSLU_FP,
+		EigenPartialNICSLU_BRA,
 		CUDADense,
 		CUDASparse,
 		CUDAMagma,
@@ -58,6 +60,7 @@ class MnaSolverFactory {
 			EigenNICSLU,
 			EigenPartialNICSLU,
 			EigenPartialNICSLU_FP,
+			EigenPartialNICSLU_BRA,
 #endif //WITH_NICSLU
 #ifdef WITH_CUDA
 			CUDADense,
@@ -120,6 +123,9 @@ class MnaSolverFactory {
 		case MnaSolverImpl::EigenPartialNICSLU_FP:
 			log->info("creating EigenPartialNICSLU_FP solver implementation");
 			return std::make_shared<MnaSolverEigenPartialNICSLU_FP<VarType>>(name, domain, logLevel);
+		case MnaSolverImpl::EigenPartialNICSLU_BRA:
+			log->info("creating EigenPartialNICSLU_BRA solver implementation");
+			return std::make_shared<MnaSolverEigenPartialNICSLU_BRA<VarType>>(name, domain, logLevel);
 #endif
 		default:
 			throw CPS::SystemError("unsupported MNA implementation.");

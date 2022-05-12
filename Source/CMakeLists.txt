@@ -58,6 +58,7 @@ if(WITH_NICSLU)
 		MNASolverEigenNICSLU.cpp
 		MNASolverEigenPartialNICSLU.cpp
 		MNASolverEigenPartialNICSLU_FP.cpp
+		MNASolverEigenPartialNICSLU_BRA.cpp
 	)
 endif()
 

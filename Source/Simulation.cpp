@@ -435,7 +435,7 @@ void Simulation::logStepTimes(String logName) {
 	Real stepTimeSum = 0;
 	for (auto meas : mStepTimes) {
 		stepTimeSum += meas;
-		stepTimeLog->info("{:f}", meas);
+		stepTimeLog->info("{:12f}", meas);
 	}
 	mLog->info("Average step time: {:.6f}", stepTimeSum / mStepTimes.size());
 }
