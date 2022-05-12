@@ -180,8 +180,85 @@ namespace SMIB {
         Real lineResistance = lineCIGREHV.lineResistancePerKm*lineLeng;
         Real lineInductance = lineCIGREHV.lineReactancePerKm/nomOmega*lineLeng;
         Real lineCapacitance = lineCIGREHV.lineSusceptancePerKm/nomOmega*lineLeng;
-        Real lineConductance =lineCIGREHV.lineConductancePerKm*lineLeng;;
+        Real lineConductance =lineCIGREHV.lineConductancePerKm*lineLeng;
     };
+
+    struct ScenarioConfig2 {
+        //Scenario used to validate reduced order SG VBR models against PSAT (in SP domain)
+
+        // General grid parameters
+        Real VnomMV = 24e3;
+        Real VnomHV = 230e3;
+        Real nomFreq = 60;
+        Real ratio = VnomMV/VnomHV;
+        Real nomOmega= nomFreq * 2 * PI;
+
+        // Generator parameters
+        Real setPointActivePower = 300e6;
+        Real setPointVoltage = 1.05*VnomMV;
+
+        // CIGREHVAmerican (230 kV)
+        Grids::CIGREHVAmerican::LineParameters lineCIGREHV;
+        Real lineLength = 100;
+        Real lineResistance = lineCIGREHV.lineResistancePerKm * lineLength * std::pow(ratio,2);
+        Real lineInductance = lineCIGREHV.lineReactancePerKm * lineLength * std::pow(ratio,2) / nomOmega;
+        Real lineCapacitance = lineCIGREHV.lineSusceptancePerKm * lineLength / std::pow(ratio,2) / nomOmega;
+        Real lineConductance = 1e-15;
+
+        // In PSAT SwitchClosed is equal to 1e-3 p.u.
+        Real SwitchClosed = 1e-3 * (24*24/555);
+	    Real SwitchOpen = 1e6;
+    };
+
+    struct ScenarioConfig3 {
+        //Scenario used to validate reduced order SG VBR models in the DP and EMT domain against the SP domain
+
+        // General grid parameters
+        Real VnomMV = 24e3;
+        Real nomFreq = 60;
+        Real nomOmega= nomFreq * 2 * PI;
+
+        //-----------Generator-----------//
+        Real setPointActivePower=300e6;
+        Real mechPower = 300e6;
+        Real initActivePower = 300e6;
+        Real initReactivePower = 0;
+        Real initVoltAngle = -PI / 2;
+        Complex initComplexElectricalPower = Complex(initActivePower, initReactivePower);
+        Complex initTerminalVolt = VnomMV * Complex(cos(initVoltAngle), sin(initVoltAngle));
+
+        // 
+        Real SwitchClosed = 0.1;
+	    Real SwitchOpen = 1e6;
+    };
+
+    struct ScenarioConfig4 {
+        //Scenario used to compare DP against SP accuracy in Martin's thesis
+
+        // General grid parameters
+        Real VnomMV = 24e3;
+        Real VnomHV = 230e3;
+        Real nomFreq = 60;
+        Real ratio = VnomMV/VnomHV;
+        Real nomOmega= nomFreq * 2 * PI;
+
+        // Generator parameters
+        Real setPointActivePower = 300e6;
+        Real setPointVoltage = 1.05*VnomMV;
+
+        // CIGREHVAmerican (230 kV)
+        Grids::CIGREHVAmerican::LineParameters lineCIGREHV;
+        Real lineLength = 100;
+        Real lineResistance = lineCIGREHV.lineResistancePerKm * lineLength * std::pow(ratio,2);
+        Real lineInductance = lineCIGREHV.lineReactancePerKm * lineLength * std::pow(ratio,2) / nomOmega;
+        Real lineCapacitance = lineCIGREHV.lineSusceptancePerKm * lineLength / std::pow(ratio,2) / nomOmega;
+        Real lineConductance = 8e-2;
+
+        // In PSAT SwitchClosed is equal to 1e-3 p.u.
+        Real SwitchClosed = 0.1;
+	    Real SwitchOpen = 1e6;
+    };
+  
 }
 
 namespace ThreeBus {
@@ -400,22 +477,22 @@ namespace CIGREMV {
         std::vector<String> inputNames = {  pv->name() + "_powerctrl_input_pref", pv->name() + "_powerctrl_input_qref",
                                             pv->name() + "_powerctrl_input_vcd", pv->name() + "_powerctrl_input_vcq",
                                             pv->name() + "_powerctrl_input_ircd", pv->name() + "_powerctrl_input_ircq"};
-        logger->addAttribute(inputNames, pv->attribute("powerctrl_inputs"));
+        //logger->logAttribute(inputNames, pv->attribute("powerctrl_inputs"));
         std::vector<String> stateNames = {  pv->name() + "_powerctrl_state_p", pv->name() + "_powerctrl_state_q",
                                             pv->name() + "_powerctrl_state_phid", pv->name() + "_powerctrl_state_phiq",
                                             pv->name() + "_powerctrl_state_gammad", pv->name() + "_powerctrl_state_gammaq"};
-        logger->addAttribute(stateNames, pv->attribute("powerctrl_states"));
+        //logger->logAttribute(stateNames, pv->attribute("powerctrl_states"));
         std::vector<String> outputNames = {  pv->name() + "_powerctrl_output_vsd", pv->name() + "_powerctrl_output_vsq"};
-        logger->addAttribute(outputNames, pv->attribute("powerctrl_outputs"));
+        //logger->logAttribute(outputNames, pv->attribute("powerctrl_outputs"));
 
         // interface variables
-        logger->addAttribute(pv->name() + "_v_intf", pv->attribute("v_intf"));
-        logger->addAttribute(pv->name() + "_i_intf", pv->attribute("i_intf"));
+        /*logger->logAttribute(pv->name() + "_v_intf", pv->attribute("v_intf"));
+        logger->logAttribute(pv->name() + "_i_intf", pv->attribute("i_intf"));
 
         // additional variables
-        logger->addAttribute(pv->name() + "_pll_output", pv->attribute("pll_output"));
-        logger->addAttribute(pv->name() + "_vsref", pv->attribute("Vsref"));
-        logger->addAttribute(pv->name() + "_vs", pv->attribute("Vs"));
+        logger->logAttribute(pv->name() + "_pll_output", pv->attribute("pll_output"));
+        logger->logAttribute(pv->name() + "_vsref", pv->attribute("Vsref"));
+        logger->logAttribute(pv->name() + "_vs", pv->attribute("Vs"));*/
     }
 
 }
@@ -433,7 +510,7 @@ namespace Events {
             loadSwitch->open();
             system.addComponent(loadSwitch);
             system.connectComponentToNodes<Complex>(loadSwitch, { CPS::SimNode<Complex>::GND, connectionNode});
-            logger->addAttribute("switchedload_i", loadSwitch->attribute("i_intf"));
+            //logger->logAttribute("switchedload_i", loadSwitch->attribute("i_intf"));
             return DPsim::SwitchEvent::make(eventTime, loadSwitch, true);
         } else if (domain == CPS::Domain::SP) {
             auto loadSwitch = SP::Ph1::Switch::make("Load_Add_Switch_" + nodeName, Logger::Level::debug);
@@ -443,7 +520,7 @@ namespace Events {
             loadSwitch->open();
             system.addComponent(loadSwitch);
             system.connectComponentToNodes<Complex>(loadSwitch, { CPS::SimNode<Complex>::GND, connectionNode});
-            logger->addAttribute("switchedload_i", loadSwitch->attribute("i_intf"));
+            //logger->logAttribute("switchedload_i", loadSwitch->attribute("i_intf"));
             return DPsim::SwitchEvent::make(eventTime, loadSwitch, true);
         } else {
             return nullptr;
@@ -461,7 +538,7 @@ namespace Events {
             loadSwitch->openSwitch();
             system.addComponent(loadSwitch);
             system.connectComponentToNodes<Real>(loadSwitch, { CPS::SimNode<Real>::GND, system.node<CPS::SimNode<Real>>(nodeName) });
-            logger->addAttribute("switchedload_i", loadSwitch->attribute("i_intf"));
+            //logger->logAttribute("switchedload_i", loadSwitch->attribute("i_intf"));
             return DPsim::SwitchEvent3Ph::make(eventTime, loadSwitch, true);
         } else {
             return nullptr;
