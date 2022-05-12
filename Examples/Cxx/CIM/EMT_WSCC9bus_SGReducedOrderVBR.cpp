@@ -10,7 +10,6 @@
 #include <list>
 
 #include <DPsim.h>
-#include "../../dpsim/Examples/Cxx/Examples.h"
 
 using namespace DPsim;
 using namespace CPS::EMT;
@@ -34,7 +33,7 @@ int main(int argc, char *argv[]) {
 	// Find CIM files
 	std::list<fs::path> filenames;
 	CommandLineArgs args(argc, argv);
-	if (argc >= 1) {
+	if (argc <= 1) {
 		filenames = Utils::findFiles({
 			"WSCC-09_Dyn_Full_DI.xml",
 			"WSCC-09_Dyn_Full_EQ.xml",
@@ -96,7 +95,7 @@ int main(int argc, char *argv[]) {
         loggerPF->addAttribute(node->name() + ".V", node->attribute("v"));
 
 	// run powerflow
-    Simulation simPF(simNamePF, args);
+    Simulation simPF(simNamePF, logLevel);
 	simPF.setSystem(systemPF);
 	simPF.setTimeStep(finalTime);
 	simPF.setFinalTime(2*finalTime);
@@ -155,14 +154,14 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	Simulation sim(simName, args);
+	Simulation sim(simName, logLevel);
 	sim.setSystem(sys);
 	sim.setDomain(Domain::EMT);
 	sim.setSolverType(Solver::Type::MNA);
 	sim.setTimeStep(timeStep);
 	sim.setFinalTime(finalTime);
 	sim.doSystemMatrixRecomputation(true);
-	sim.setMnaSolverImplementation(MnaSolverFactory::MnaSolverImpl::EigenPartialNICSLU);
+	sim.setMnaSolverImplementation(MnaSolverFactory::MnaSolverImpl::EigenSparse);
 	sim.addLogger(logger);
 
 	// Optionally add switch event
