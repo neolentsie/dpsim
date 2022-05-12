@@ -190,7 +190,10 @@ namespace DPsim {
 				mModifiedAttributes.push_back(solver.attribute("left_vector"));
 			}
 
-			void execute(Real time, Int timeStepCount) { mSolver.solveWithSystemMatrixRecomputation(time, timeStepCount); }
+			void execute(Real time, Int timeStepCount) { 
+				mSolver.solveWithSystemMatrixRecomputation(time, timeStepCount); 
+				mSolver.log(time, timeStepCount);
+				}
 
 		private:
 			MnaSolverEigenSparse<VarType>& mSolver;

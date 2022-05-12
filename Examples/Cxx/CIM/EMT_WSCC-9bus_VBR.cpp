@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 	// Find CIM files
 	std::list<fs::path> filenames;
 	CommandLineArgs args(argc, argv);
-	if (argc <= 1) {
+	if (argc >= 1) {
 		filenames = Utils::findFiles({
 			"WSCC-09_Dyn_Full_DI.xml",
 			"WSCC-09_Dyn_Full_EQ.xml",
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
     }
 
 	// run powerflow
-    Simulation simPF(simNamePF, Logger::Level::debug);
+    Simulation simPF(simNamePF, args);
 	simPF.setSystem(systemPF);
 	simPF.setTimeStep(finalTime);
 	simPF.setFinalTime(2*finalTime);
@@ -99,16 +99,17 @@ int main(int argc, char *argv[]) {
 			logger->addAttribute(comp->name() + ".I", comp->attribute("i_intf"));
 	}
 
-	Simulation sim(simName, Logger::Level::info);
+	Simulation sim(simName, args);
 	sim.setSystem(sys);
 	sim.setDomain(Domain::EMT);
 	sim.setSolverType(Solver::Type::MNA);
 	sim.setTimeStep(timeStep);
 	sim.setFinalTime(finalTime);
 	sim.doSystemMatrixRecomputation(true);
-	sim.setMnaSolverImplementation(MnaSolverFactory::MnaSolverImpl::EigenSparse);
+	sim.setMnaSolverImplementation(MnaSolverFactory::MnaSolverImpl::EigenPartialNICSLU);
 	sim.addLogger(logger);
 	sim.run();
+	//sim.logStepTimes(simName + "_step_times");
 
 	return 0;
 }
