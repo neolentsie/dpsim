@@ -54,7 +54,7 @@ void MnaSolverEigenPartialNICSLU_FP<VarType>::stampVariableSystemMatrix() {
 	// Calculate factorization of current matrix
 	this->mLuFactorizationVariableSystemMatrix.analyzePatternFP(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries);
 	auto start = std::chrono::steady_clock::now();
-	this->mLuFactorizationVariableSystemMatrix.factorize_partial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries);
+	this->mLuFactorizationVariableSystemMatrix.factorize_partial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries, 1);
 	auto end = std::chrono::steady_clock::now();
 	std::chrono::duration<double> diff = end-start;
 	this->mLUTimes.push_back(diff.count());
