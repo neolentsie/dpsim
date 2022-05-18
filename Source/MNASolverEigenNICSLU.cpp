@@ -42,7 +42,7 @@ void MnaSolverEigenNICSLU<VarType>::switchedMatrixStamp(std::size_t index, std::
 	for (UInt i = 0; i < mSwitches.size(); ++i)
 		mSwitches[i]->mnaApplySwitchSystemMatrixStamp(bit[i], sys, 0);
 	// Compute LU-factorization for system matrix
-	mLuFactorizations[bit][0]->analyzePattern(sys, this->mListVariableSystemMatrixEntries, 0);
+	mLuFactorizations[bit][0]->analyzePattern(sys);
 	// First LU Factorization?
 	auto start = std::chrono::steady_clock::now();
 	mLuFactorizations[bit][0]->factorize(sys);
@@ -65,7 +65,7 @@ void MnaSolverEigenNICSLU<VarType>::stampVariableSystemMatrix() {
 		statElem->mnaApplySystemMatrixStamp(mBaseSystemMatrix);
 	mSLog->info("Base matrix with only static elements: {}", Logger::matrixToString(mBaseSystemMatrix));
 	mSLog->flush();
-	
+
 	// Use matrix with only static elements as basis for variable system matrix
 	mVariableSystemMatrix = mBaseSystemMatrix;
 
@@ -83,7 +83,7 @@ void MnaSolverEigenNICSLU<VarType>::stampVariableSystemMatrix() {
 	mSLog->flush();
 
 	// Calculate factorization of current matrix
-	mLuFactorizationVariableSystemMatrix.analyzePattern(mVariableSystemMatrix, this->mListVariableSystemMatrixEntries /* empty in this case */, 0);
+	mLuFactorizationVariableSystemMatrix.analyzePattern(mVariableSystemMatrix);
 	auto start = std::chrono::steady_clock::now();
 	mLuFactorizationVariableSystemMatrix.factorize(mVariableSystemMatrix);
 	auto end = std::chrono::steady_clock::now();
@@ -96,7 +96,7 @@ void MnaSolverEigenNICSLU<VarType>::solveWithSystemMatrixRecomputation(Real time
 	//log(time, timeStepCount);
 	// Reset source vector
 	mRightSideVector.setZero();
-	
+
 	// Add together the right side vector (computed by the components'
 	// pre-step tasks)
 	for (auto stamp : mRightVectorStamps)
@@ -136,7 +136,7 @@ void MnaSolverEigenNICSLU<VarType>::recomputeSystemMatrix(Real time) {
 
 	// Refactorization of matrix assuming that structure remained
 	// constant by omitting analyzePattern
-	
+
 	auto start = std::chrono::steady_clock::now();
 	// Compute LU-factorization for system matrix
 	//mLuFactorizationVariableSystemMatrix.factorize(mVariableSystemMatrix);

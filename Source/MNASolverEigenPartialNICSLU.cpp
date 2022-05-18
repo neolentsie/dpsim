@@ -16,8 +16,8 @@ using namespace CPS;
 namespace DPsim {
 
 template <typename VarType>
-MnaSolverEigenPartialNICSLU<VarType>::MnaSolverEigenPartialNICSLU(String name, 
-CPS::Domain domain, 
+MnaSolverEigenPartialNICSLU<VarType>::MnaSolverEigenPartialNICSLU(String name,
+CPS::Domain domain,
 CPS::Logger::Level logLevel) :	MnaSolverEigenNICSLU<VarType>(name, domain, logLevel) {
 }
 template <typename VarType>
@@ -34,7 +34,7 @@ void MnaSolverEigenPartialNICSLU<VarType>::stampVariableSystemMatrix() {
 		statElem->mnaApplySystemMatrixStamp(this->mBaseSystemMatrix);
 	this->mSLog->info("Base matrix with only static elements: {}", Logger::matrixToString(this->mBaseSystemMatrix));
 	this->mSLog->flush();
-	
+
 	// Use matrix with only static elements as basis for variable system matrix
 	this->mVariableSystemMatrix = this->mBaseSystemMatrix;
 
@@ -56,7 +56,7 @@ void MnaSolverEigenPartialNICSLU<VarType>::stampVariableSystemMatrix() {
 	// 0: regular AMD
 	// 1: partial ordering
 	// 2: bottom-right arranging
-	this->mLuFactorizationVariableSystemMatrix.analyzePattern(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries, 2);
+	this->mLuFactorizationVariableSystemMatrix.analyzePatternPartial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries, 2);
 	auto start = std::chrono::steady_clock::now();
 	this->mLuFactorizationVariableSystemMatrix.factorize_partial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries);
 	auto end = std::chrono::steady_clock::now();
@@ -69,7 +69,7 @@ void MnaSolverEigenPartialNICSLU<VarType>::solveWithSystemMatrixRecomputation(Re
 	//log(time, timeStepCount);
 	// Reset source vector
 	this->mRightSideVector.setZero();
-	
+
 	// Add together the right side vector (computed by the components'
 	// pre-step tasks)
 	for (auto stamp : this->mRightVectorStamps)
@@ -109,11 +109,11 @@ void MnaSolverEigenPartialNICSLU<VarType>::recomputeSystemMatrix(Real time) {
 
 	// Refactorization of matrix assuming that structure remained
 	// constant by omitting analyzePattern
-	
+
 	auto start = std::chrono::steady_clock::now();
 	// Compute LU-factorization for system matrix
 	this->mLuFactorizationVariableSystemMatrix.refactorize_partial(this->mVariableSystemMatrix);
-	auto end = std::chrono::steady_clock::now();	
+	auto end = std::chrono::steady_clock::now();
 	std::chrono::duration<double> diff = end-start;
 	this->mRecomputationTimes.push_back(diff.count());
 	++(this->mNumRecomputations);
