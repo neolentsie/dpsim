@@ -57,8 +57,6 @@ if(WITH_NICSLU)
 	list(APPEND DPSIM_SOURCES
 		MNASolverEigenNICSLU.cpp
 		MNASolverEigenPartialNICSLU.cpp
-		MNASolverEigenPartialNICSLU_FP.cpp
-		MNASolverEigenPartialNICSLU_BRA.cpp
 	)
 endif()
 

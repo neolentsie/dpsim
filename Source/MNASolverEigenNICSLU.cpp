@@ -42,7 +42,7 @@ void MnaSolverEigenNICSLU<VarType>::switchedMatrixStamp(std::size_t index, std::
 	for (UInt i = 0; i < mSwitches.size(); ++i)
 		mSwitches[i]->mnaApplySwitchSystemMatrixStamp(bit[i], sys, 0);
 	// Compute LU-factorization for system matrix
-	mLuFactorizations[bit][0]->analyzePattern(sys);
+	mLuFactorizations[bit][0]->analyzePattern(sys, this->mListVariableSystemMatrixEntries, 0);
 	// First LU Factorization?
 	auto start = std::chrono::steady_clock::now();
 	mLuFactorizations[bit][0]->factorize(sys);
@@ -83,7 +83,7 @@ void MnaSolverEigenNICSLU<VarType>::stampVariableSystemMatrix() {
 	mSLog->flush();
 
 	// Calculate factorization of current matrix
-	mLuFactorizationVariableSystemMatrix.analyzePattern(mVariableSystemMatrix);
+	mLuFactorizationVariableSystemMatrix.analyzePattern(mVariableSystemMatrix, this->mListVariableSystemMatrixEntries /* empty in this case */, 0);
 	auto start = std::chrono::steady_clock::now();
 	mLuFactorizationVariableSystemMatrix.factorize(mVariableSystemMatrix);
 	auto end = std::chrono::steady_clock::now();
