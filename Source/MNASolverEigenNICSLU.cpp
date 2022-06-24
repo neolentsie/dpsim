@@ -139,7 +139,6 @@ void MnaSolverEigenNICSLU<VarType>::recomputeSystemMatrix(Real time) {
 
 	auto start = std::chrono::steady_clock::now();
 	// Compute LU-factorization for system matrix
-	//mLuFactorizationVariableSystemMatrix.factorize(mVariableSystemMatrix);
 	mLuFactorizationVariableSystemMatrix.refactorize(mVariableSystemMatrix);
 	auto end = std::chrono::steady_clock::now();
 	std::chrono::duration<double> diff = end-start;

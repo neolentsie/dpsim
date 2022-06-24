@@ -10,6 +10,12 @@
 #include <dpsim/MNASolverEigenPartialNICSLU.h>
 #include <dpsim/SequentialScheduler.h>
 
+#define CANADIAN 3
+#define BRA 2
+#define FP 1
+#define AMD 0
+#define ORDERING FP
+
 using namespace DPsim;
 using namespace CPS;
 
@@ -52,15 +58,25 @@ void MnaSolverEigenPartialNICSLU<VarType>::stampVariableSystemMatrix() {
 	this->mSLog->flush();
 
 	// Calculate factorization of current matrix
-	// modes
-	// 0: regular AMD
-	// 1: partial ordering
-	// 2: bottom-right arranging
-	this->mLuFactorizationVariableSystemMatrix.analyzePatternPartial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries, 2);
+
+	/* Preprocessing with different ordering methods
+	 * -> last argument of analyzePatternPartial
+	 * 0: regular AMD
+	 * 1: partial ordering
+	 * 2: bottom-right arranging
+	 * maybe make those macros: #define BRA 2, ... 
+	 * */
+	this->mLuFactorizationVariableSystemMatrix.analyzePatternPartial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries, ORDERING);
+
+	// factorization with factorization path computation
 	auto start = std::chrono::steady_clock::now();
 	this->mLuFactorizationVariableSystemMatrix.factorize_partial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries);
 	auto end = std::chrono::steady_clock::now();
+
+	// compute factorization (+ path comp.) time
 	std::chrono::duration<double> diff = end-start;
+
+	// store times
 	this->mLUTimes.push_back(diff.count());
 }
 
@@ -80,12 +96,15 @@ void MnaSolverEigenPartialNICSLU<VarType>::solveWithSystemMatrixRecomputation(Re
 		this->recomputeSystemMatrix(time);
 
 	// Calculate new solution vector
-	 auto start = std::chrono::steady_clock::now();
-	 this->mLeftSideVector = this->mLuFactorizationVariableSystemMatrix.solve(this->mRightSideVector);
+	auto start = std::chrono::steady_clock::now();
+	this->mLeftSideVector = this->mLuFactorizationVariableSystemMatrix.solve(this->mRightSideVector);
+	auto end = std::chrono::steady_clock::now();
 
-	 auto end = std::chrono::steady_clock::now();
-	 std::chrono::duration<double> diff = end-start;
-	 this->mSolveTimes.push_back(diff.count());
+	// compute solution time
+	std::chrono::duration<double> diff = end-start;
+	 
+	// store time
+	this->mSolveTimes.push_back(diff.count());
 
 	// TODO split into separate task? (dependent on x, updating all v attributes)
 	for (UInt nodeIdx = 0; nodeIdx < this->mNumNetNodes; ++nodeIdx)
@@ -110,12 +129,18 @@ void MnaSolverEigenPartialNICSLU<VarType>::recomputeSystemMatrix(Real time) {
 	// Refactorization of matrix assuming that structure remained
 	// constant by omitting analyzePattern
 
-	auto start = std::chrono::steady_clock::now();
 	// Compute LU-factorization for system matrix
+	auto start = std::chrono::steady_clock::now();
 	this->mLuFactorizationVariableSystemMatrix.refactorize_partial(this->mVariableSystemMatrix);
 	auto end = std::chrono::steady_clock::now();
+
+	// compute refactorization time
 	std::chrono::duration<double> diff = end-start;
+
+	// store time
 	this->mRecomputationTimes.push_back(diff.count());
+
+	// increase counter of recomputations
 	++(this->mNumRecomputations);
 }
 }
