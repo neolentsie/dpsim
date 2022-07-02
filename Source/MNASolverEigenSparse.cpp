@@ -43,7 +43,11 @@ void MnaSolverEigenSparse<VarType>::switchedMatrixStamp(std::size_t index, std::
 
 	// Compute LU-factorization for system matrix
 	mLuFactorizations[bit][0]->analyzePattern(sys);
+	auto start = std::chrono::steady_clock::now();
 	mLuFactorizations[bit][0]->factorize(sys);
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> diff = end-start;
+	mLUTimes.push_back(diff.count());
 }
 
 template <typename VarType>
@@ -79,7 +83,11 @@ void MnaSolverEigenSparse<VarType>::stampVariableSystemMatrix() {
 
 	// Calculate factorization of current matrix
 	mLuFactorizationVariableSystemMatrix.analyzePattern(mVariableSystemMatrix);
+	auto start = std::chrono::steady_clock::now();
 	mLuFactorizationVariableSystemMatrix.factorize(mVariableSystemMatrix);
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> diff = end-start;
+	mLUTimes.push_back(diff.count());
 }
 
 template <typename VarType>
@@ -97,7 +105,12 @@ void MnaSolverEigenSparse<VarType>::solveWithSystemMatrixRecomputation(Real time
 		recomputeSystemMatrix(time);
 
 	// Calculate new solution vector
-	mLeftSideVector = mLuFactorizationVariableSystemMatrix.solve(mRightSideVector);
+	 auto start = std::chrono::steady_clock::now();
+	 mLeftSideVector = mLuFactorizationVariableSystemMatrix.solve(mRightSideVector);
+
+	 auto end = std::chrono::steady_clock::now();
+	 std::chrono::duration<double> diff = end-start;
+	 mSolveTimes.push_back(diff.count());
 
 	// TODO split into separate task? (dependent on x, updating all v attributes)
 	for (UInt nodeIdx = 0; nodeIdx < mNumNetNodes; ++nodeIdx)
@@ -121,7 +134,13 @@ void MnaSolverEigenSparse<VarType>::recomputeSystemMatrix(Real time) {
 
 	// Refactorization of matrix assuming that structure remained
 	// constant by omitting analyzePattern
+	
+	auto start = std::chrono::steady_clock::now();
+	// Compute LU-factorization for system matrix
 	mLuFactorizationVariableSystemMatrix.factorize(mVariableSystemMatrix);
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> diff = end-start;
+	mRecomputationTimes.push_back(diff.count());
 	++mNumRecomputations;
 }
 
@@ -204,9 +223,13 @@ void MnaSolverEigenSparse<VarType>::solve(Real time, Int timeStepCount) {
 	if (!mIsInInitialization)
 		MnaSolver<VarType>::updateSwitchStatus();
 
+	auto start = std::chrono::steady_clock::now();
 	if (mSwitchedMatrices.size() > 0)
 		mLeftSideVector = mLuFactorizations[mCurrentSwitchStatus][0]->solve(mRightSideVector);
 
+	auto end = std::chrono::steady_clock::now();
+	std::chrono::duration<double> diff = end-start;
+	mSolveTimes.push_back(diff.count());
 
 	// TODO split into separate task? (dependent on x, updating all v attributes)
 	for (UInt nodeIdx = 0; nodeIdx < mNumNetNodes; ++nodeIdx)
@@ -264,6 +287,10 @@ void MnaSolverEigenSparse<VarType>::logSystemMatrices() {
 		mSLog->info("Right side vector: \n{}", mRightSideVector);
 	}
 }
+}
+
+template class DPsim::MnaSolverEigenSparse<Real>;
+template class DPsim::MnaSolverEigenSparse<Complex>;
 
 template <typename VarType>
 void MnaSolverEigenSparse<VarType>::logLUTime()
@@ -288,7 +315,6 @@ void MnaSolverEigenSparse<VarType>::logSolveTime(){
 	mSLog->info("Maximum solve time: {:.12f}", solveMax);
 	mSLog->info("Number of solves: {:d}", mSolveTimes.size());
 }
-
 template <typename VarType>
 void MnaSolverEigenSparse<VarType>::logRecomputationTime(){
        Real recompSum = 0.0;
@@ -306,7 +332,3 @@ void MnaSolverEigenSparse<VarType>::logRecomputationTime(){
        		mSLog->info("Number of refactorizations: {:d}", mRecomputationTimes.size());
 	   }
 }
-}
-
-template class DPsim::MnaSolverEigenSparse<Real>;
-template class DPsim::MnaSolverEigenSparse<Complex>;

@@ -14,7 +14,7 @@
 #define BRA 2
 #define FP 1
 #define AMD 0
-#define ORDERING FP
+#define ORDERING AMD
 
 using namespace DPsim;
 using namespace CPS;
@@ -60,17 +60,17 @@ void MnaSolverEigenPartialNICSLU<VarType>::stampVariableSystemMatrix() {
 	// Calculate factorization of current matrix
 
 	/* Preprocessing with different ordering methods
-	 * -> last argument of analyzePatternPartial
+	 * -> last argument of analyzePatternPartial [ORDERING]
 	 * 0: regular AMD
 	 * 1: partial ordering
 	 * 2: bottom-right arranging
-	 * maybe make those macros: #define BRA 2, ... 
+	 * 3: canadian method (not an ordering per se, but it's set as a parameter in NICSLU, so it knows what to do)
 	 * */
 	this->mLuFactorizationVariableSystemMatrix.analyzePatternPartial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries, ORDERING);
 
 	// factorization with factorization path computation
 	auto start = std::chrono::steady_clock::now();
-	this->mLuFactorizationVariableSystemMatrix.factorize_partial(this->mVariableSystemMatrix, this->mListVariableSystemMatrixEntries);
+	this->mLuFactorizationVariableSystemMatrix.factorize_partial(this->mVariableSystemMatrix);
 	auto end = std::chrono::steady_clock::now();
 
 	// compute factorization (+ path comp.) time
