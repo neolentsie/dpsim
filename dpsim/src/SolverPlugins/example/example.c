@@ -11,7 +11,7 @@ int example_solve(double *rhs_values,
 void example_log(const char *str);
 void example_cleanup(void);
 
-static const char* PLUGIN_NAME = "plugin.so";
+static const char* PLUGIN_NAME = "plugin";
 static struct dpsim_mna_plugin example_plugin = {
 	.log = example_log, //a properly working dpsim will override this with the spdlog logger
 	.init = example_init,
@@ -23,7 +23,7 @@ static struct dpsim_mna_plugin example_plugin = {
 struct dpsim_mna_plugin *get_mna_plugin(const char *name)
 {
     if (name == NULL || strcmp(name, PLUGIN_NAME) != 0) {
-        printf("error: name mismatch\n");
+        printf("error: name mismatch %s %s\n", name, PLUGIN_NAME);
         return NULL;
     }
     return &example_plugin;
