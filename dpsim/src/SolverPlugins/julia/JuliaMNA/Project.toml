@@ -1,0 +1,11 @@
+name = "JuliaMNA"
+uuid = "0b880eee-5bea-49e4-84ce-93e95af8a2a0"
+authors = ["Felix Wege <fwege@eonerc.rwth-aachen.de>"]
+version = "0.1.0"
+
+[deps]
+PackageCompiler = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+SparseMatricesCSR = "a0a7dd2c-ebf4-11e9-1f05-cf50bc540ca1"
+Suppressor = "fd094767-a336-5f1f-9728-57cf17d0bbfb"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
