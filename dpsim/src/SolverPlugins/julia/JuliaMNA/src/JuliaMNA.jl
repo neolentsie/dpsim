@@ -86,7 +86,7 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug "result = $result"
 
     for (index, value) in enumerate(result)
-        unsafe_store!(lhs_values_ptr, 3.14, index)
+        unsafe_store!(lhs_values_ptr, value, index)
     end
     return 0
 end
