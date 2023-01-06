@@ -36,8 +36,6 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     lu_mat = mna_decomp(sparse_mat)
     global system_matrix = lu_mat
 
-    # println(sparse_mat)
-    # println(lu_mat)
     mna_init()
     return 0
 end
@@ -55,24 +53,13 @@ Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     )
     @debug "sparse_mat = $(dump(sparse_mat))"
 
-    lut_mat = mna_decomp(sparse_mat)
+    lu_mat = mna_decomp(sparse_mat)
     global system_matrix = lu_mat
     
     return 0
 end
 
 Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr{Cdouble})::Cint
-    # try
-    #     dim = system_matrix.parent.m # Matrix is quadratic, so we can use m or n
-    # catch e
-    #     println("Could not read dimensions of system matrix. ", e)
-    #     return -1
-    # end
-
-    # open("rhs.txt", "w") do io
-    #     write(io, string(unsafe_wrap(Array, rhs_values_ptr, system_matrix.parent.n), "\n"))
-    # end
-
     dim = system_matrix.parent.m # Matrix is quadratic, so we can use m or n
 
     rhs = unsafe_wrap(Array, rhs_values_ptr, dim)
@@ -80,7 +67,6 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug "rhs = $rhs"
     @debug "lhs = $(unsafe_wrap(Array, lhs_values_ptr, dim))"
 
-    # result = system_matrix \ rhs
     result = mna_solve(system_matrix, rhs)
 
     @debug "result = $result"
@@ -96,7 +82,7 @@ Base.@ccallable function cleanup()::Cvoid
 end
 
 Base.@ccallable function log(log_string::Cstring)::Cvoid
-    println("Log form Julia ExampleLib: $(unsafe_string(log_string))")
+    println("[Log]: $(unsafe_string(log_string))")
 end
 
 # function mat_ctojl(mat_ptr::Ptr{dpsim_csr_matrix})
