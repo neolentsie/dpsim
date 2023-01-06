@@ -1,7 +1,7 @@
 using JuliaMNA
 
 # Read system matrix from file
-system_matrix_strings = readlines("../system_matrix_small.txt")
+system_matrix_strings = readlines("test/system_matrix_small.txt")
 # system_matrix_strings = readlines("../system_matrix.txt")
 
 system_matrix_strings[1] = replace(system_matrix_strings[1], r"[\[\],]" => "")
@@ -22,7 +22,7 @@ system_matrix = dpsim_csr_matrix(
 )
 
 # Read right hand side vector from file
-rhs_vector_strings = readlines("../rhs_small.txt")
+rhs_vector_strings = readlines("test/rhs_small.txt")
 # rhs_vector_strings = readlines("../rhs.txt")
 
 # Sanize rhs strings and parse into Float64 vector
