@@ -4,9 +4,8 @@ using JuliaMNA
 system_matrix_strings = readlines("test/system_matrix_small.txt")
 # system_matrix_strings = readlines("../system_matrix.txt")
 
-system_matrix_strings[1] = replace(system_matrix_strings[1], r"[\[\],]" => "")
-system_matrix_strings[2] = replace(system_matrix_strings[2], r"[\[\],]" => "")
-system_matrix_strings[3] = replace(system_matrix_strings[3], r"[\[\],]" => "")
+# Sanize strings
+system_matrix_strings = replace.(system_matrix_strings, r"[\[\],]" => "")
 
 # Convert system to dpsim_csr_matrix
 values = parse.(Float64, split(system_matrix_strings[1]))
@@ -26,7 +25,7 @@ rhs_vector_strings = readlines("test/rhs_small.txt")
 # rhs_vector_strings = readlines("../rhs.txt")
 
 # Sanize rhs strings and parse into Float64 vector
-rhs_vector_strings[1] = replace(rhs_vector_strings[1], r"[\[\],]" => "")
+rhs_vector_strings = replace.(rhs_vector_strings, r"[\[\],]" => "")
 rhs_vector = parse.(Float64, split(rhs_vector_strings[1]))
 
 # Inialize left hand side vector
