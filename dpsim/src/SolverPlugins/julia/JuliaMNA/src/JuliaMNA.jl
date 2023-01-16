@@ -92,6 +92,9 @@ Solve the system `l = A \\ r` with the system matrix `A`, the given right-hand s
 """
 function solve end
 Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr{Cdouble})::Cint
+
+    (@isdefined system_matrix) || ( println("ERROR: System matrix not initialized! Call init or decomp first!"); return -1 )
+
     dim = system_matrix.parent.m # Matrix is quadratic, so we can use m or n
 
     rhs = unsafe_wrap(Array, rhs_values_ptr, dim)
