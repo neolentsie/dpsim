@@ -38,18 +38,7 @@ The LU factorization is internally stored as `system_matrix` and implicitly used
 """
 function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
-    # println(matrix_ptr)
-    mat_ptr = unsafe_load(matrix_ptr)
-    @debug "mat_ptr = $mat_ptr"
-
-    sparse_mat = SparseMatrixCSR{0}(
-        mat_ptr.row_number, # Number of rows
-        mat_ptr.row_number, # Matrices are square
-        unsafe_wrap(Array, mat_ptr.rowIndex, mat_ptr.row_number+1), # Row pointers
-        unsafe_wrap(Array, mat_ptr.colIndex, mat_ptr.nnz), # Column indices
-        unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz) # Non-zero values
-    )
-    @debug "sparse_mat = $(dump(sparse_mat))"
+    sparse_mat = mat_ctojl(matrix_ptr)
 
     lu_mat = mna_decomp(sparse_mat)
     global system_matrix = lu_mat
@@ -67,17 +56,7 @@ The new LU factorization is internally stored as `system_matrix` and implicitly 
 """
 function decomp end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
-    mat_ptr = unsafe_load(matrix_ptr)
-    @debug "mat_ptr = $mat_ptr"
-
-    sparse_mat = SparseMatrixCSR{0}(
-        mat_ptr.row_number, # Number of rows
-        mat_ptr.row_number, # Matrices are square
-        unsafe_wrap(Array, mat_ptr.rowIndex, mat_ptr.row_number+1), # Row pointers
-        unsafe_wrap(Array, mat_ptr.colIndex, mat_ptr.nnz), # Column indices
-        unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz) # Non-zero values
-    )
-    @debug "sparse_mat = $(dump(sparse_mat))"
+    sparse_mat = mat_ctojl(matrix_ptr)
 
     lu_mat = mna_decomp(sparse_mat)
     global system_matrix = lu_mat
@@ -134,15 +113,25 @@ Base.@ccallable function log(log_string::Cstring)::Cvoid
     println("[Log]: $(unsafe_string(log_string))")
 end
 
-# function mat_ctojl(mat_ptr::Ptr{dpsim_csr_matrix})
-#     mat = unsafe_load(mat_ptr)
-#     return SparseMatrixCSR{0}(
-#         mat_ptr.row_number, # Number of rows
-#         mat_ptr.row_number, # Matrices are square
-#         unsafe_wrap(Array, mat_ptr.rowIndex, mat_ptr.row_number+1), # Row pointers
-#         unsafe_wrap(Array, mat_ptr.colIndex, mat_ptr.nnz), # Column indices
-#         unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz) # Non-zero values
-# )
-# end
+
+"""
+    mat_ctojl(matrix_ptr::Ptr{dpsim_csr_matrix})
+
+    Convert a `dpsim_sparse_csr` pointer to a Julia `SparseMatrixCSR` with indexing starting at 0.
+"""
+function mat_ctojl(matrix_ptr::Ptr{dpsim_csr_matrix})
+    mat_ptr = unsafe_load(matrix_ptr)
+    @debug "mat_ptr = $mat_ptr"
+
+    sparse_mat = SparseMatrixCSR{0}(
+        mat_ptr.row_number, # Number of rows
+        mat_ptr.row_number, # Matrices are square
+        unsafe_wrap(Array, mat_ptr.rowIndex, mat_ptr.row_number+1), # Row pointers
+        unsafe_wrap(Array, mat_ptr.colIndex, mat_ptr.nnz), # Column indices
+        unsafe_wrap(Array, mat_ptr.values, mat_ptr.nnz) # Non-zero values
+    )
+    @debug "sparse_mat = $(dump(sparse_mat))"
+    return sparse_mat
+end
 
 end # module
