@@ -9,7 +9,18 @@ using SparseMatricesCSR
 include("mna_solver.jl")
 
 
-# Julia representation of DPsim structs
+"""
+    mutable struct dpsim_csr_matrix
+
+Struct representation of the DPsim sparse matrix in CSR format. It is used to represent the system matrix for the mna solver library.
+
+Fields:
+- `values::Ptr{Cdouble}`    # size: nnz  
+- `rowIndex::Ptr{Cint}`     # size: row_number + 1  
+- `colIndex::Ptr{Cint}`     # size: nnz  
+- `row_number::Cint`        # number of rows of the matrix  
+- `nnz::Cint`               # number of non-zero elements in the matrix  
+"""
 mutable struct dpsim_csr_matrix
     values::Ptr{Cdouble}    # size: nnz
     rowIndex::Ptr{Cint}     # size: row_number + 1
@@ -18,7 +29,14 @@ mutable struct dpsim_csr_matrix
     nnz::Cint               # number of non-zero elements in the matrix
 end
 
-# Function dummies
+"""
+    @callable init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
+
+Initialize the MNA solver with the given system matrix. The matrix will be converted to a Julia SparseMatrix in CSR format and decomposed using LU factorization.
+
+The LU factorization is internally stored as `system_matrix` and implicitly used in the solve function.
+"""
+function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     # println(matrix_ptr)
     mat_ptr = unsafe_load(matrix_ptr)
@@ -40,6 +58,14 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     return 0
 end
 
+"""
+    @callable decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
+
+Decompose the given system matrix using LU factorization.
+
+The new LU factorization is internally stored as `system_matrix` and implicitly used in the solve function.
+"""
+function decomp end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     mat_ptr = unsafe_load(matrix_ptr)
     @debug "mat_ptr = $mat_ptr"
@@ -59,6 +85,12 @@ Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     return 0
 end
 
+"""
+    @callable solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr{Cdouble})::Cint
+
+Solve the system `l = A \\ r` with the system matrix `A`, the given right-hand side vector `r` and store the result in the given left-hand side values pointer `l`.
+"""
+function solve end
 Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr{Cdouble})::Cint
     dim = system_matrix.parent.m # Matrix is quadratic, so we can use m or n
 
@@ -77,10 +109,24 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     return 0
 end
 
+"""
+    @callable cleanup()::Cvoid
+
+Cleanup the MNA solver.
+
+__Currently not implemented...__
+"""
+function cleanup end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function cleanup()::Cvoid
     mna_cleanup()
 end
 
+"""
+    @callable log(log_string::Cstring)::Cvoid
+
+Print the given log string to the console.
+"""
+function log end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function log(log_string::Cstring)::Cvoid
     println("[Log]: $(unsafe_string(log_string))")
 end
