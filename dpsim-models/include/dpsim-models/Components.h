@@ -84,6 +84,7 @@
 #include <dpsim-models/EMT/EMT_Ph1_VoltageSourceRamp.h>
 #include <dpsim-models/EMT/EMT_Ph1_VoltageSourceNorton.h>
 #include <dpsim-models/EMT/EMT_Ph1_SSN_Full_Serial_RLC.h>
+#include <dpsim-models/EMT/EMT_Ph1_Switch.h>
 
 #include <dpsim-models/EMT/EMT_Ph3_Capacitor.h>
 #include <dpsim-models/EMT/EMT_Ph3_Inductor.h>
