@@ -3,8 +3,11 @@ module JuliaMNA
 
 export get_mna_plugin, init, decomp, solve, cleanup, log
 export dpsim_csr_matrix
+export systemCheck
 
 using SparseMatricesCSR
+
+using CUDA
 
 include("mna_solver.jl")
 
@@ -29,6 +32,10 @@ mutable struct dpsim_csr_matrix
     nnz::Cint               # number of non-zero elements in the matrix
 end
 
+function Base.size(mat::dpsim_csr_matrix)
+    return (mat.row_number, mat.row_number)
+end
+
 """
     @callable init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
 
@@ -38,9 +45,14 @@ The LU factorization is internally stored as `system_matrix` and implicitly used
 """
 function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
+    global accelerators = systemCheck()
+
+
     sparse_mat = mat_ctojl(matrix_ptr)
 
-    lu_mat = mna_decomp(sparse_mat)
+    lu_mat = mna_decomp(sparse_mat, accelerators)
+    @info lu_mat
+    @info typeof(lu_mat)
     global system_matrix = lu_mat
 
     mna_init()
@@ -74,7 +86,8 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
 
     (@isdefined system_matrix) || ( println("ERROR: System matrix not initialized! Call init or decomp first!"); return -1 )
 
-    dim = system_matrix.parent.m # Matrix is quadratic, so we can use m or n
+    dim = size(system_matrix)[1] # Matrix is quadratic, so we can use m or n
+
 
     rhs = unsafe_wrap(Array, rhs_values_ptr, dim)
 
@@ -83,11 +96,16 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
 
     result = mna_solve(system_matrix, rhs)
 
-    @debug "result = $result"
+    @debug "result = $result | $(typeof(result))"
+    
+    result = Array(result) #make sure result is a normal array on host
 
-    for (index, value) in enumerate(result)
-        unsafe_store!(lhs_values_ptr, value, index)
-    end
+    # for (index, value) in enumerate(result)
+    #     unsafe_store!(lhs_values_ptr, value, index)
+    # end
+
+    unsafe_copyto!(lhs_values_ptr, pointer(result), dim)
+
     return 0
 end
 
@@ -132,6 +150,22 @@ function mat_ctojl(matrix_ptr::Ptr{dpsim_csr_matrix})
     )
     @debug "sparse_mat = $(dump(sparse_mat))"
     return sparse_mat
+end
+
+function systemCheck()
+    accelerators = []
+    if has_cuda()
+        @debug "CUDA available! Try using CUDA accelerator..."
+        try
+            CuArray(ones(1))
+            push!(accelerators, "CUDA")
+            @warn "CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
+        catch e
+            @warn "CUDA driver available but could not load CuArrays package. Falling back to CPU..."
+        end
+    end
+
+    return accelerators
 end
 
 end # module
