@@ -4,13 +4,16 @@ JULIA ?= julia
 ROOT_DIR:=$(shell pwd)
 TARGET="JuliaMNACompiled"
 
-.PHONY: all, default
+.PHONY: all, default, clean
 
-default: plugin.so
+default: all
 
 all: juliamna.so wrapper.o plugin.so
 
-juliamna.so: JuliaMNA/build/build.jl JuliaMNA/src/JuliaMNA.jl JuliaMNA/src/mna_solver.jl
+clean:
+	rm -rf $(ROOT_DIR)/$(TARGET)
+
+juliamna.so: JuliaMNA/build/build.jl JuliaMNA/src/JuliaMNA.jl JuliaMNA/src/mna_solver.jl JuliaMNA/build/precompile_statements.jl
 	$(JULIA) --threads=auto --startup-file=no JuliaMNA/build/build.jl $(TARGET)
 
 wrapper.o:
