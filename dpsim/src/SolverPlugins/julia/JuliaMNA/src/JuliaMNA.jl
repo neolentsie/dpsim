@@ -45,6 +45,7 @@ The LU factorization is internally stored as `system_matrix` and implicitly used
 """
 function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
+    mna_init()
     sparse_mat = mat_ctojl(matrix_ptr)
 
     lu_mat = mna_decomp(sparse_mat)
@@ -52,7 +53,6 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     @debug typeof(lu_mat)
     global system_matrix = lu_mat
 
-    mna_init()
     return 0
 end
 

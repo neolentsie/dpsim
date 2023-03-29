@@ -7,7 +7,7 @@ using LinearAlgebra
 struct AbstractAccelerator end
 struct CUDAccelerator end
 
-function systemCheck()
+function findAccelerator()
     # CUDA Accelerator
     if has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
@@ -26,10 +26,28 @@ function systemCheck()
     return accelerator
 end
 
-global accelerator = systemCheck()
+function systemCheck()
+    try
+        hwAwarenessDisabled = ENV["JL_MNA_DISABLE_AWARENESS"]
+        if hwAwarenessDisabled == "false"
+            return findAccelerator()
+        end
+    catch e
+        if e isa KeyError
+            # If variable does not exist, assume: hardware awareness enabled
+            return findAccelerator()
+        else
+            rethrow(e)
+        end
+    end
+    @info "Hardware awareness disabled... Using Fallback implementation"
+    return AbstractAccelerator()
+end
+
 
 # Housekeeping
 function mna_init()
+    global accelerator = systemCheck()
 end
 
 function mna_cleanup()
@@ -55,6 +73,7 @@ end
 
 function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator)
     rhs_d = CuVector(rhs)
+    @info "CUUUDA"
     ldiv!(system_matrix, rhs_d)
     return Array(rhs_d)
 end
