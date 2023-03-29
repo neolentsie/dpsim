@@ -45,12 +45,9 @@ The LU factorization is internally stored as `system_matrix` and implicitly used
 """
 function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
-    global accelerator = systemCheck()
-
-
     sparse_mat = mat_ctojl(matrix_ptr)
 
-    lu_mat = mna_decomp(sparse_mat, accelerator)
+    lu_mat = mna_decomp(sparse_mat)
     @debug lu_mat
     @debug typeof(lu_mat)
     global system_matrix = lu_mat
@@ -70,7 +67,7 @@ function decomp end # Dummy function to allow documentation for ccallable functi
 Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     sparse_mat = mat_ctojl(matrix_ptr)
 
-    lu_mat = mna_decomp(sparse_mat, accelerator)
+    lu_mat = mna_decomp(sparse_mat)
     global system_matrix = lu_mat
     
     return 0
@@ -94,7 +91,7 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug "rhs = $rhs"
     @debug "lhs = $(unsafe_wrap(Array, lhs_values_ptr, dim))"
 
-    result = mna_solve(system_matrix, rhs, accelerator)
+    result = mna_solve(system_matrix, rhs)
 
     @debug "result = $result | $(typeof(result))"
     

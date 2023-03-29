@@ -8,7 +8,7 @@ struct AbstractAccelerator end
 struct CUDAccelerator end
 
 function systemCheck()
-    accelerator = AbstractAccelerator()
+    # CUDA Accelerator
     if has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
         try
@@ -21,10 +21,12 @@ function systemCheck()
         end
     elseif isempty(accelerator)
         @warn "No accelerator found."
+        accelerator = AbstractAccelerator()
     end
-
     return accelerator
 end
+
+global accelerator = systemCheck()
 
 # Housekeeping
 function mna_init()
@@ -44,6 +46,8 @@ function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF)
     return lu_decomp
 end
+mna_decomp(sparse_mat) = mna_decomp(sparse_mat, accelerator)
+
 
 function mna_solve(system_matrix, rhs, accelerator::AbstractAccelerator)
     return system_matrix \ rhs
@@ -54,3 +58,4 @@ function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator)
     ldiv!(system_matrix, rhs_d)
     return Array(rhs_d)
 end
+mna_solve(system_matrix, rhs) = mna_solve(system_matrix, rhs, accelerator)
