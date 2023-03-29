@@ -7,7 +7,7 @@ using LinearAlgebra
 struct AbstractAccelerator end
 struct CUDAccelerator end
 
-function findAccelerator()
+function find_accelerator()
     # CUDA Accelerator
     if has_cuda()
         @debug "CUDA available! Try using CUDA accelerator..."
@@ -19,23 +19,23 @@ function findAccelerator()
         catch e
             @warn "CUDA driver available but could not load CuArrays package."
         end
-    elseif isempty(accelerator)
+    elseif !@isdefined accelerator
         @warn "No accelerator found."
         accelerator = AbstractAccelerator()
     end
     return accelerator
 end
 
-function systemCheck()
+function systemcheck()
     try
         hwAwarenessDisabled = ENV["JL_MNA_DISABLE_AWARENESS"]
         if hwAwarenessDisabled == "false"
-            return findAccelerator()
+            return find_accelerator()
         end
     catch e
         if e isa KeyError
             # If variable does not exist, assume: hardware awareness enabled
-            return findAccelerator()
+            return find_accelerator()
         else
             rethrow(e)
         end
@@ -47,7 +47,7 @@ end
 
 # Housekeeping
 function mna_init()
-    global accelerator = systemCheck()
+    global accelerator = systemcheck()
 end
 
 function mna_cleanup()
