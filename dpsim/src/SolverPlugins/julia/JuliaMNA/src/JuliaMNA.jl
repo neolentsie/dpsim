@@ -45,14 +45,14 @@ The LU factorization is internally stored as `system_matrix` and implicitly used
 """
 function init end # Dummy function to allow documentation for ccallable function
 Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
-    global accelerators = systemCheck()
+    global accelerator = systemCheck()
 
 
     sparse_mat = mat_ctojl(matrix_ptr)
 
-    lu_mat = mna_decomp(sparse_mat, accelerators)
-    @info lu_mat
-    @info typeof(lu_mat)
+    lu_mat = mna_decomp(sparse_mat, accelerator)
+    @debug lu_mat
+    @debug typeof(lu_mat)
     global system_matrix = lu_mat
 
     mna_init()
@@ -70,7 +70,7 @@ function decomp end # Dummy function to allow documentation for ccallable functi
 Base.@ccallable function decomp(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     sparse_mat = mat_ctojl(matrix_ptr)
 
-    lu_mat = mna_decomp(sparse_mat)
+    lu_mat = mna_decomp(sparse_mat, accelerator)
     global system_matrix = lu_mat
     
     return 0
@@ -94,7 +94,7 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
     @debug "rhs = $rhs"
     @debug "lhs = $(unsafe_wrap(Array, lhs_values_ptr, dim))"
 
-    result = mna_solve(system_matrix, rhs)
+    result = mna_solve(system_matrix, rhs, accelerator)
 
     @debug "result = $result | $(typeof(result))"
     
@@ -151,21 +151,4 @@ function mat_ctojl(matrix_ptr::Ptr{dpsim_csr_matrix})
     @debug "sparse_mat = $(dump(sparse_mat))"
     return sparse_mat
 end
-
-function systemCheck()
-    accelerators = []
-    if has_cuda()
-        @debug "CUDA available! Try using CUDA accelerator..."
-        try
-            CuArray(ones(1))
-            push!(accelerators, "CUDA")
-            @warn "CUDA driver available and CuArrays package loaded. Using CUDA accelerator..."
-        catch e
-            @warn "CUDA driver available but could not load CuArrays package. Falling back to CPU..."
-        end
-    end
-
-    return accelerators
-end
-
 end # module
