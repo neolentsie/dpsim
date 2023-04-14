@@ -70,7 +70,7 @@ void SP::Ph1::Transformer::initializeFromNodesAndTerminals(Real frequency) {
 	mReactance = mNominalOmega * **mInductance;
 	mImpedance = { **mResistance, mReactance };
 	SPDLOG_LOGGER_INFO(mSLog, "Impedance={} [Ohm] (referred to primary side)", mImpedance);
-
+	
 	// Component parameters are referred to higher voltage side.
 	// Switch terminals to have terminal 0 at higher voltage side
 	// if transformer is connected the other way around.
@@ -96,11 +96,6 @@ void SP::Ph1::Transformer::initializeFromNodesAndTerminals(Real frequency) {
 	//
 	**mPrimaryLV = initialSingleVoltage(1) * **mRatio;
 	**mSecondaryLV = initialSingleVoltage(1);
-	**mPrimaryCurrent = (**mIntfCurrent)(0, 0);
-	**mSecondaryCurrent = (**mIntfCurrent)(0, 0) * **mRatio;
-
-	**mPrimaryLV = (**mIntfVoltage)(0, 0);
-	**mSecondaryLV = (**mIntfVoltage)(0, 0) / **mRatio;
 	**mPrimaryCurrent = (**mIntfCurrent)(0, 0);
 	**mSecondaryCurrent = (**mIntfCurrent)(0, 0) * **mRatio;
 
@@ -206,7 +201,6 @@ MatrixComp SP::Ph1::Transformer::Y_element() {
 // #### MNA Section ####
 void SP::Ph1::Transformer::mnaCompInitialize(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector) {
 	updateMatrixNodeIndices();
-
 }
 
 void SP::Ph1::Transformer::mnaCompApplySystemMatrixStamp(SparseMatrixRow& systemMatrix) {
@@ -229,7 +223,6 @@ void SP::Ph1::Transformer::mnaCompApplySystemMatrixStamp(SparseMatrixRow& system
 		SPDLOG_LOGGER_INFO(mSLog, "Add {:e}+j{:e} to system at ({:d},{:d})",
 			(-**mRatio / mImpedance).real(), (-**mRatio / mImpedance).imag(), matrixNodeIndex(1), matrixNodeIndex(0));
 	}
-
 	mSLog->flush();
 }
 
@@ -241,7 +234,7 @@ void SP::Ph1::Transformer::mnaCompAddPostStepDependencies(AttributeBase::List &p
 	modifiedAttributes.push_back(mPrimaryLV);
 	modifiedAttributes.push_back(mSecondaryLV);
 	modifiedAttributes.push_back(mIntfCurrent);
-	modifiedAttributes.push_back(mSecondaryCurrent);
+	modifiedAttributes.push_back(mPrimaryCurrent);
 	modifiedAttributes.push_back(mSecondaryCurrent);
 }
 
@@ -255,6 +248,7 @@ void SP::Ph1::Transformer::mnaCompUpdateVoltage(const Matrix& leftVector) {
 	(**mIntfVoltage)(0, 0) = 0.0;
 	if (terminalNotGrounded(0)) {
 		(**mIntfVoltage)(0, 0) = Math::complexFromVectorElement(leftVector, matrixNodeIndex(0));
+		**mPrimaryLV = (**mIntfVoltage)(0, 0);
 	}
 	if (terminalNotGrounded(1)) {
 		**mSecondaryLV = Math::complexFromVectorElement(leftVector, matrixNodeIndex(1));

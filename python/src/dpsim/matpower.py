@@ -42,9 +42,6 @@ class Reader:
         Process raw mpc data and create corresponding dataframes
         @param frequency: system frequency
         """
-        
-        # Version
-        self.mpc_version = self.mpc_raw[self.mpc_name]['version']
 
         # System frequency (not included in mpc but needed for setting dpsimpy component parameters i.e inductances, capacitances ..)
         self.mpc_freq = frequency
@@ -287,8 +284,8 @@ class Reader:
             tmp_fbus = self.mpc_bus_data.loc[self.mpc_bus_data['bus_i'] == fbus_index]
             tmp_tbus = self.mpc_bus_data.loc[self.mpc_bus_data['bus_i'] == tbus_index]
 
-            fbus_baseV = self.mpc_bus_data.at[tmp_fbus.first_valid_index(),'baseKV']*kv_v
-            tbus_baseV = self.mpc_bus_data.at[tmp_tbus.first_valid_index(),'baseKV']*kv_v
+            fbus_baseV = self.mpc_bus_data.at[tmp_fbus.first_valid_index(),'baseKV'] * kv_v
+            tbus_baseV = self.mpc_bus_data.at[tmp_tbus.first_valid_index(),'baseKV'] * kv_v
 
             # Lines
             # if (branch_ratio == 0) and (fbus_baseV != tbus_baseV):
@@ -312,7 +309,8 @@ class Reader:
                     self.dpsimpy_comp_dict[line_name][0].set_base_voltage(tbus_baseV)
                 
                 # add connections
-                self.dpsimpy_comp_dict[line_name].append([self.dpsimpy_busses_dict[self.get_node_name(fbus_index)], self.dpsimpy_busses_dict[self.get_node_name(tbus_index)]])
+                #self.dpsimpy_comp_dict[line_name].append([self.dpsimpy_busses_dict[self.get_node_name(fbus_index)], self.dpsimpy_busses_dict[self.get_node_name(tbus_index)]])
+                self.dpsimpy_comp_dict[line_name].append([self.dpsimpy_busses_dict[self.get_node_name(tbus_index)], self.dpsimpy_busses_dict[self.get_node_name(fbus_index)]])
 
             # Transformers
             else:
@@ -330,7 +328,7 @@ class Reader:
                 secondary_V = tmp_tbus['Vm'][tbus_index-1] * tbus_baseV
                 transf_ratioAbs = branch_ratio * fbus_baseV / tbus_baseV
                 
-                # From MATPOWER-manual taps at “from”bus,  impedance at “to” bus,  i.e.  ifr=x=b= 0,tap=|Vf|/|Vt|
+                # From MATPOWER-manual taps at “from” bus,  impedance at “to” bus,  i.e.  ifr=x=b= 0,tap=|Vf|/|Vt|
                 # transform impedances to absolute values
                 transf_baseZ = tbus_baseV * tbus_baseV / (self.mpc_base_power_MVA)
                 # transf_baseZ = tbus_baseV * tbus_baseV / (transf_s)
@@ -514,14 +512,15 @@ class Reader:
         
         load_p = self.mpc_bus_data.at[index,'Pd'] * mw_w
         load_q = self.mpc_bus_data.at[index,'Qd'] * mw_w
-        load_baseV = self.mpc_bus_data.at[index,'baseKV'] * kv_v
-
+        #load_baseV = self.mpc_bus_data.at[index,'baseKV'] * kv_v
+        load_nominalV = self.mpc_bus_data.at[index,'baseKV'] * kv_v * self.mpc_bus_data.at[index,'Vm']
+        
         load = None
         if (self.domain==Domain.SP or self.domain==Domain.PF):
             load = dpsimpy_components.Load(load_name, self.log_level)
         else:
            load = dpsimpy_components.RXLoad(load_name, self.log_level)
-        load.set_parameters(load_p, load_q, load_baseV)
+        load.set_parameters(load_p, load_q, load_nominalV)
         
         if (self.domain==Domain.PF and bus_type==dpsimpy.PowerflowBusType.PQ):
             load.modify_power_flow_bus_type(bus_type)
@@ -579,25 +578,10 @@ class Reader:
             self.dpsimpy_comp_dict[shunt_name] = [shunt]
             self.dpsimpy_comp_dict[shunt_name].append([self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
         elif (self.domain==Domain.SP):
-            #"""
             shunt = dpsimpy_components.Load(shunt_name, self.log_level)
-            shunt.set_parameters(p, q, bus_baseV)
+            shunt.set_parameters(p, q, V)
             self.dpsimpy_comp_dict[shunt_name] = [shunt]
             self.dpsimpy_comp_dict[shunt_name].append([self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
-            """
-            if (c>0):
-                shunt = dpsimpy_components.Capacitor(shunt_name, self.log_level)
-                shunt.set_parameters(C=c)
-            else:
-                # not tested yet!
-                shunt = dpsimpy_components.Inductor(shunt_name, self.log_level)
-                shunt.set_parameters(L=l)
-            self.dpsimpy_comp_dict[shunt_name] = [shunt]
-            self.dpsimpy_comp_dict[shunt_name].append([dpsimpy_components.SimNode.gnd, self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
-            
-            # if (r!=0)
-            #   add shunt resistor
-            """
         else:
             # TODO
             pass

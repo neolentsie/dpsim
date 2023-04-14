@@ -82,20 +82,6 @@ void DP::Ph1::Transformer::initializeFromNodesAndTerminals(Real frequency) {
 	SPDLOG_LOGGER_INFO(mSLog,
 		"\n--- Initialization from powerflow ---"
 		"\nVoltage across: {:s}"
-		"\nCurrent: {:s}"
-		"\nTerminal 0 voltage: {:s}"
-		"\nTerminal 1 voltage: {:s}"
-		"\nVirtual Node 1 voltage: {:s}"
-		"\n--- Initialization from powerflow finished ---",
-		Logger::phasorToString((**mIntfVoltage)(0,0)),
-		Logger::phasorToString((**mIntfCurrent)(0,0)),
-		Logger::phasorToString(initialSingleVoltage(0)),
-		Logger::phasorToString(initialSingleVoltage(1)));
-	mSLog->flush();
-
-	SPDLOG_LOGGER_INFO(mSLog,
-		"\n--- Initialization from powerflow ---"
-		"\nVoltage across: {:s}"
 		"\nHV side Current: {:s} (= {:s})"
 		"\nLow side Current: {:s}"
 		"\nTerminal 0 voltage (HV side voltage): {:s}"
