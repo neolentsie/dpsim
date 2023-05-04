@@ -56,12 +56,14 @@ end
 # Solving Logic
 function mna_decomp(sparse_mat, accelerator::AbstractAccelerator)
     lu_decomp = SparseArrays.lu(sparse_mat)
+    @info "CPU"
     return lu_decomp
 end
 
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator)
     matrix = CuSparseMatrixCSR(CuArray(sparse_mat)) # Sparse GPU implementation
     lu_decomp = CUSOLVERRF.RFLU(matrix; symbolic=:RF)
+    @info "GPU"
     return lu_decomp
 end
 mna_decomp(sparse_mat) = mna_decomp(sparse_mat, accelerator)
@@ -73,7 +75,6 @@ end
 
 function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator)
     rhs_d = CuVector(rhs)
-    @info "CUUUDA"
     ldiv!(system_matrix, rhs_d)
     return Array(rhs_d)
 end
