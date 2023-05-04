@@ -53,6 +53,8 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     @debug typeof(lu_mat)
     global system_matrix = lu_mat
 
+    # mna_solve(system_matrix, ones(sparse_mat.m))
+
     return 0
 end
 
@@ -95,7 +97,8 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
 
     @debug "result = $result | $(typeof(result))"
     
-    result = Array(result) #make sure result is a normal array on host
+    # FIXME: Is this required anymore?
+    # result = Array(result) #make sure result is a normal array on host
 
     # for (index, value) in enumerate(result)
     #     unsafe_store!(lhs_values_ptr, value, index)
