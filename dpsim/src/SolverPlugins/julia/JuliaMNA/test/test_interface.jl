@@ -1,3 +1,10 @@
+push!(LOAD_PATH, "/home/wege/Projects/dpsim-refactor/dpsim/src/SolverPlugins/julia/JuliaMNA")
+
+using Pkg
+Pkg.activate(".")
+Pkg.status()
+# Pkg.instantiate()
+
 using JuliaMNA
 using Profile
 
@@ -37,27 +44,47 @@ function read_input(path::VectorPath)
 end
 
 GC.enable(false) # We cannot be sure that system_matrix is garbage collected before the pointer is passed... 
-system_matrix = read_input(ArrayPath("test/system_matrix_small.txt"))
+system_matrix = read_input(ArrayPath("$(@__DIR__)/system_matrix_small.txt"))
+# system_matrix = read_input(ArrayPath("test/system_matrix_small.txt"))
 system_matrix_ptr = pointer_from_objref(system_matrix)
 
-@show unsafe_wrap(Array, system_matrix.values, system_matrix.nnz)
+# @show unsafe_wrap(Array, system_matrix.values, system_matrix.nnz)
 
-rhs_vector = read_input(VectorPath("test/rhs_small.txt"))
+rhs_vector = read_input(VectorPath("$(@__DIR__)/rhs_small.txt"))
+# rhs_vector = read_input(VectorPath("test/rhs_small.txt"))
 
 lhs_vector = zeros(Float64, length(rhs_vector))
 
 init(Base.unsafe_convert(Ptr{dpsim_csr_matrix}, system_matrix_ptr))
 GC.enable(true)
 
-@time solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
+# @time solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
+solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
 # @profile solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
 
-
-# ## Profling
+## Profling
 # @time begin
 #     @profile begin
 #         for i in 1:1000
-#             solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cfloat}, lhs_vector))
+#             solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
 #         end
+#     end
+# end
+begin
+    begin
+        for i in 1:1000
+            solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
+        end
+    end
+end
+
+# using StatProfilerHTML
+# statprofilehtml()
+
+
+# using BenchmarkTools
+# @benchmark begin
+#     for i in 1:1000
+#         solve(Base.unsafe_convert(Ptr{Cdouble}, rhs_vector), Base.unsafe_convert(Ptr{Cdouble}, lhs_vector))
 #     end
 # end
