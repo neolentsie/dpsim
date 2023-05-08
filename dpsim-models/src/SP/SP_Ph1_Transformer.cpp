@@ -97,6 +97,11 @@ void SP::Ph1::Transformer::initializeFromNodesAndTerminals(Real frequency) {
 	**mPrimaryCurrent = (**mIntfCurrent)(0, 0);
 	**mSecondaryCurrent = (**mIntfCurrent)(0, 0) * **mRatio;
 
+	**mPrimaryLV = (**mIntfVoltage)(0, 0);
+	**mSecondaryLV = (**mIntfVoltage)(0, 0) / **mRatio;
+	**mPrimaryCurrent = (**mIntfCurrent)(0, 0);
+	**mSecondaryCurrent = (**mIntfCurrent)(0, 0) * **mRatio;
+
 	SPDLOG_LOGGER_INFO(mSLog,
 		"\n--- Initialization from powerflow ---"
 		"\nVoltage across: {:s}"
@@ -253,9 +258,7 @@ void SP::Ph1::Transformer::mnaCompUpdateVoltage(const Matrix& leftVector) {
 		**mSecondaryLV = Math::complexFromVectorElement(leftVector, matrixNodeIndex(1));
 		**mPrimaryLV = **mSecondaryLV * **mRatio;
 		(**mIntfVoltage)(0, 0) -= **mSecondaryLV;
-	}
-
-	
+	}	
 }
 
 void SP::Ph1::Transformer::mnaCompUpdateCurrent(const Matrix& leftVector) {
