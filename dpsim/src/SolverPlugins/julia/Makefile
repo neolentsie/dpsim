@@ -13,7 +13,7 @@ all: juliamna.so wrapper.o plugin.so
 clean:
 	rm -rf $(ROOT_DIR)/$(TARGET)
 
-juliamna.so: JuliaMNA/build/build.jl JuliaMNA/src/JuliaMNA.jl JuliaMNA/src/mna_solver.jl JuliaMNA/build/precompile_statements.jl
+juliamna.so: JuliaMNA/build/build.jl JuliaMNA/src/JuliaMNA.jl JuliaMNA/src/mna_solver.jl #JuliaMNA/build/precompile_statements.jl
 	$(JULIA) --threads=auto --startup-file=no JuliaMNA/build/build.jl $(TARGET)
 
 wrapper.o:

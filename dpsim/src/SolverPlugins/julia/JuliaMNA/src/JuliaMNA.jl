@@ -7,7 +7,7 @@ export systemCheck
 
 using SparseMatricesCSR
 
-using CUDA
+using CUDA  #for debugging only
 
 include("mna_solver.jl")
 
@@ -49,9 +49,9 @@ Base.@ccallable function init(matrix_ptr::Ptr{dpsim_csr_matrix})::Cint
     sparse_mat = mat_ctojl(matrix_ptr)
 
     lu_mat = mna_decomp(sparse_mat)
-    @debug lu_mat
+    CUDA.@allowscalar @debug lu_mat
     @debug typeof(lu_mat)
-    global system_matrix = lu_mat
+    global system_matrix = lu_mat   
 
     # mna_solve(system_matrix, ones(sparse_mat.m))
 
@@ -95,8 +95,8 @@ Base.@ccallable function solve(rhs_values_ptr::Ptr{Cdouble}, lhs_values_ptr::Ptr
 
     result = mna_solve(system_matrix, rhs)
 
-    @debug "result = $result | $(typeof(result))"
-    
+    @debug "result = $result | $(typeof(result))"  
+     
     # FIXME: Is this required anymore?
     # result = Array(result) #make sure result is a normal array on host
 
