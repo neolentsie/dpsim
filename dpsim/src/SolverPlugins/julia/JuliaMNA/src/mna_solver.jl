@@ -1,9 +1,7 @@
 using SparseArrays
-using Krylov            #solver for 32bit-version
-using LinearOperators   #operator for solver
 using CUDA              #for debugging
 using CUDA.CUSPARSE
-using CUDA.CUSOLVER     #defines zfd()
+#using CUDA.CUSOLVER     #defines zfd()
 using CUSOLVERRF
 using LinearAlgebra
 
@@ -64,31 +62,6 @@ function systemcheck()
     return AbstractAccelerator()
 end
 
-function GPU_32Bit_check(accelerator)
-    if typeof(accelerator) == AbstractAccelerator
-        @info "CUDA accelerator not available. Cannot define bit-length."
-        return false
-    end
-
-    try
-        GPU32bit = ENV["JL_GPU32BIT"]
-        if GPU32bit == "true"
-            @info "Using 32Bit variables on CUDA accelerator."
-            return true
-        end
-    catch e
-        if e isa KeyError 
-            # If the variable does not exits, assume 64bit
-            @info "Using 64Bit variables on CUDA accelerator."
-            return false
-        else
-            rethrow(e)
-        end
-    end
-    @info "Using 64Bit variables on CUDA accelerator."
-    return false
-end
-
 # Housekeeping
 function mna_init()
     global accelerator = systemcheck()
@@ -115,28 +88,51 @@ function mna_decomp(sparse_mat, accelerator::CUDAccelerator64bit)
     return lu_decomp
 end
 
+# own LU-format required for VERSION 3 of decomp
+import Base: size
+struct LU_comps{A<:CUDA.CUSPARSE.CuSparseMatrixCSR, P<:CuArray}
+    mat::A      #matrix with L and U
+    P::P        #permutation matrix
+end
+size(a::LU_comps, k...) = size(a.mat,k...)
+
 function mna_decomp(sparse_mat, accelerator::CUDAccelerator32bit)
-    #convert sparse_mat into 32bit version
-    sparse_mat = SparseMatrixCSR{0}(
-        sparse_mat.m, # Number of rows
-        sparse_mat.n, # Matrices are square
-        sparse_mat.rowptr, # Row pointers
-        sparse_mat.colval, # Column indices
-        convert.(Float32, sparse_mat.nzval) # Non-zero values
-    )
+    
+    ### VERSION 1 ####
+    # #LU: on GPU without sparse matrices
+    matrix = CuArray{Float32}(sparse_mat)
+    #@debug "matrix: $(typeof(matrix))"
+    lu_decomp = lu(matrix) #result on GPU in Float32
+    ### END Version 1 ####
 
-    #To avoid zero-pivot, calculate permutation. For this, Sparse_CSC format is necessary
-    sparse_csc = sparse(sparse_mat)
-    global p = zfd(sparse_csc, 'O') #permutation later required to reverse it
-    p .+=1
-    sparse_csc = sparse_csc[:,p]    #apply permutation
+    ### VERSION 2 ####
+    # #LU: on CPU without sparse matrices
+    # #transfer: LU to GPU without Sparse matrices
+    # lu_decomp = lu(Array(sparse_mat)) #on CPU; Array() prevents UMFPACK-format
+    # A = cu(lu_decomp.factors)
+    # p_d = CuArray{Int32}(lu_decomp.ipiv)
+    # lu_decomp = LU{Float32, typeof(A), typeof(p_d)}(A, p_d, lu_decomp.info)   #LU on GPU
+    ### END VERSION 2 ####
 
-    #calculate incomplete LU factorization on GPU
-    global matrix = CuSparseMatrixCSR(CuArray(sparse_csc))  #required later for Krylov-solver
-    lu_decomp = ilu02(matrix, 'O')
+    ### VERSION 3 ####
+    # #LU: on CPU without sparse matrices
+    # #transfer: own LU-type to GPU with sparse matrices
+    # lu_decomp = lu(Array(sparse_mat)) #on CPU; Array() prevents UMFPACK-format
+    # A = CuSparseMatrixCSR{Float32}(sparse(lu_decomp.factors))
+    # P = cu(lu_decomp.P)
+    # lu_decomp = LU_comps(A,P)
+    ### END VERSION 3 ###
+    
+    ### VERSION 4 ####
+    # #LU: on CPU (sparse input -> UMFPACK on CPU)
+    # #transfer: done in solve-method
+    # #matrix = CuSparseMatrixCSR(CuArray{Float32}(sparse_mat))    #DOES NOT HELP -> LU still on CPU
+    # lu_decomp = lu(sparse_mat) #on CPU but UMFPACK-Format
+    # #@debug "L: $(typeof(lu_decomp.parent.L)), U: $(typeof(lu_decomp.parent.U))"
+    ### END VERSION 4 ###
 
     @info "GPU"
-    @debug "lu_decomp = $lu_decomp | $(typeof(lu_decomp))"
+    #@debug "L: $(typeof(lu_decomp.L)), U: $(typeof(lu_decomp.U))"
     return lu_decomp
 end
 mna_decomp(sparse_mat) = mna_decomp(sparse_mat, accelerator)
@@ -156,32 +152,47 @@ function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator64bit)
     return Array(rhs_d)
 end
 
-# Solve Py = b with P as result of LU
-function ldiv_ilu0!(P::CuSparseMatrixCSR, b, y)
-    ldiv!(UnitLowerTriangular(P), b)
-    ldiv!(y, UpperTriangular(P), b)
-    return y
-end
-
 function mna_solve(system_matrix, rhs, accelerator::CUDAccelerator32bit)
     rhs_d = CuVector{Float32}(rhs)
     CUDA.@allowscalar @debug "rhs_d = $rhs_d"
 
-    #create Operator that models P⁻¹ for the Krylov-solver
-    n = length(rhs_d)
-    T = eltype(rhs_d)
-    symmetric = hermitian = false
-    opM = LinearOperator(T, n, n, symmetric, hermitian, (y, b) -> ldiv_ilu0!(system_matrix, b, y))
+    ### For VERSION 1 and 2 of decomp ####
+    # #solve on GPU without sparse matrices
+    ldiv!(system_matrix, rhs_d)
+    ### END ####
 
-    #use iterative Krylov-solver for solving
-    x, stats = dqgmres(matrix, rhs_d, M=opM)    #bicgstab (no sol for small matrix), gmres or dqgmres?
+    ### For VERSION 3 of decomp ####
+    # #solve on GPU with sparse matrices
+    # rhs_d = _ldiv2(system_matrix, rhs_d)
+    ### END ####
 
-    invp = invperm(p)   #calculate inverse permutation
-    rhs_d = x[invp]     #apply inverse permutation on solution
-    rhs_d = Array(rhs_d)
-    rhs_d = Float64.(rhs_d) #convert back to 64bit
+    ### For Version 4 of decomp ####
+    # #solve on GPU with sparse matrices and UMFPACK
+    # #4 vecs/matrices from UMPFACK: p, q, L, U
+    # TODO: debug, Permutation is wrong! -> incorrect result
+    # L = cu(UnitLowerTriangular(system_matrix.parent.L)) #Float32
+    # U = cu(UpperTriangular(system_matrix.parent.U))
+    # dim = length(system_matrix.parent.p)
+    # Q = cu(Matrix{Int32}(I, dim, dim)[:, system_matrix.parent.q])
+    # P = cu(Matrix{Int32}(I, dim, dim)[system_matrix.parent.p, :])
+    # Rs = cu(Diagonal(system_matrix.parent.Rs))
+    # #CUDA.@allowscalar @debug "Rs = $Rs"
+    # rhs_d = P*Rs*rhs_d
+    # ldiv!(U, ldiv!(L, rhs_d))
+    # rhs_d = Q*rhs_d
+    ### END ####
     
-    @debug "lhs = $rhs_d, $(typeof(rhs_d))"
+    # transfer to CPU, convert to 64bit
+    rhs_d = Array(rhs_d)
+    rhs_d = Float64.(rhs_d)
+    # @debug "lhs = $rhs_d, $(typeof(rhs_d))"
     return rhs_d
 end
 mna_solve(system_matrix, rhs) = mna_solve(system_matrix, rhs, accelerator)
+
+# own ldiv-function required for VERSION 3 of decomp
+function _ldiv2(A::LU_comps, B::StridedVecOrMat)
+    B = A.P*B
+    ldiv!(UpperTriangular(A.mat), ldiv!(UnitLowerTriangular(A.mat), B))
+    return B
+end
