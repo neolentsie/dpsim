@@ -208,7 +208,7 @@ namespace KundurExample1 {
 
 namespace KundurTwoArea {
     // P. Kundur, "Power System Stability and Control", Example 12.6, pp. 813
-    struct {
+    struct ScenarioConfig {
          //-----------Network-----------//
         Real Vnom = 230e3;
         Real nomFreq = 60;
@@ -244,12 +244,13 @@ namespace KundurTwoArea {
 
         // Additional parameters for the classical model
         Real Xpd = 0.3;
+        Real Rs= 0; // (changed original value is 0,0025)
 
         //-----------Generator 1 (bus1)-----------//
-        Real nomPower_G1 = 900e6;
-        Real nomPhPhVoltRMS_G1 = 20e3;
+        Real nomPower_G1 = 900e6; //nominal apparent power
+        Real nomPhPhVoltRMS_G1 = 20e3; // nominal voltage
         Real nomFreq_G1 = 60;
-        Real H_G1 = 6.5;
+        Real H_G1 = 6.5; // Inertia Constant rated to Sn
         // Initialization parameters
         Real initActivePower_G1 = 700e6;
         Real initMechPower_G1 = 7006;
@@ -290,11 +291,22 @@ namespace KundurTwoArea {
         Real setPointVoltage_G4=nomPhPhVoltRMS_G4+0.01*nomPhPhVoltRMS_G4;
 
         //-----------Transformers-----------//
-        Real t1_ratio=Vnom/nomPhPhVoltRMS_G1;
-        Real t2_ratio=Vnom/nomPhPhVoltRMS_G2;
-        Real t3_ratio=Vnom/nomPhPhVoltRMS_G3;
-        Real t4_ratio=Vnom/nomPhPhVoltRMS_G4;
-        Real transformerInductance = 0.15 * std::pow(t1_ratio, 2);
+        // Real t1_ratio=Vnom/nomPhPhVoltRMS_G1;
+        // Real t2_ratio=Vnom/nomPhPhVoltRMS_G2;
+        // Real t3_ratio=Vnom/nomPhPhVoltRMS_G3;
+        // Real t4_ratio=Vnom/nomPhPhVoltRMS_G4;
+        // Real transformerInductance = 0.15 * std::pow(t1_ratio, 2);
+
+
+        // T1-T4 (step-up)
+        Real t_power_rated= 900e6;
+        Real t_primary_volt= 20e3; 
+        Real t_secondary_volt= 230e3;
+        Real t_ratio_abs= t1_primary_volt/ t1_secondary_volt;
+        Real t_ratio_ang= 0;
+        Real t_ratio_offnom=1;
+        Real t_r = 0;
+        Real t_x = 0.15; //p.u. base 230?
 
         //-----------Load (bus7 and bus9)-----------
         Real activePower_L7= 967e6;
