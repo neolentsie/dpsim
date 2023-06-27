@@ -40,6 +40,7 @@ void SP::Ph1::Switch::initializeFromNodesAndTerminals(Real frequency) {
 		Logger::phasorToString((**mIntfCurrent)(0,0)),
 		Logger::phasorToString(initialSingleVoltage(0)),
 		Logger::phasorToString(initialSingleVoltage(1)));
+	mSLog->flush();
 }
 
 void SP::Ph1::Switch::mnaCompInitialize(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector) {
@@ -73,6 +74,7 @@ void SP::Ph1::Switch::mnaCompApplySystemMatrixStamp(SparseMatrixRow& systemMatri
 		SPDLOG_LOGGER_TRACE(mSLog, "Add {:s} to system at ({:d},{:d})", Logger::complexToString(-conductance), matrixNodeIndex(0), matrixNodeIndex(1));
 		SPDLOG_LOGGER_TRACE(mSLog, "Add {:s} to system at ({:d},{:d})", Logger::complexToString(-conductance), matrixNodeIndex(1), matrixNodeIndex(0));
 	}
+	mSLog->flush();
 }
 
 void SP::Ph1::Switch::mnaCompApplySwitchSystemMatrixStamp(Bool closed, SparseMatrixRow& systemMatrix, Int freqIdx) {
@@ -101,6 +103,7 @@ void SP::Ph1::Switch::mnaCompApplySwitchSystemMatrixStamp(Bool closed, SparseMat
 		SPDLOG_LOGGER_TRACE(mSLog, "Add {:s} to system at ({:d},{:d})", Logger::complexToString(-conductance), matrixNodeIndex(0), matrixNodeIndex(1));
 		SPDLOG_LOGGER_TRACE(mSLog, "Add {:s} to system at ({:d},{:d})", Logger::complexToString(-conductance), matrixNodeIndex(1), matrixNodeIndex(0));
 	}
+	mSLog->flush();
 }
 
 void SP::Ph1::Switch::mnaCompApplyRightSideVectorStamp(Matrix& rightVector) { }

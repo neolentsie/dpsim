@@ -93,7 +93,7 @@ void SP::Ph1::VoltageSource::mnaCompAddPostStepDependencies(AttributeBase::List 
 };
 
 void SP::Ph1::VoltageSource::mnaCompInitialize(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector) {
-		updateMatrixNodeIndices();
+	updateMatrixNodeIndices();
 
 	(**mIntfVoltage)(0,0) = mSrcSig->getSignal();
 

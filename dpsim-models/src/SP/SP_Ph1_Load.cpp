@@ -144,6 +144,7 @@ void SP::Ph1::Load::initializeFromNodesAndTerminals(Real frequency) {
 
 	(**mIntfVoltage)(0, 0) = mTerminals[0]->initialSingleVoltage();
 	(**mIntfCurrent)(0, 0) = std::conj(Complex(attributeTyped<Real>("P")->get(), attributeTyped<Real>("Q")->get()) / (**mIntfVoltage)(0, 0));
+	**mActivePower = ((**mIntfVoltage)(0, 0) * std::conj((**mIntfCurrent)(0, 0))).real();
 
 	SPDLOG_LOGGER_INFO(mSLog, 
 		"\n--- Initialization from powerflow ---"
@@ -184,4 +185,6 @@ void SP::Ph1::Load::mnaCompUpdateCurrent(const Matrix& leftVector) {
 	for (auto& subc : mSubComponents) {
 		(**mIntfCurrent)(0, 0) += subc->intfCurrent()(0, 0);
 	}
+
+	**mActivePower = ((**mIntfVoltage)(0, 0) * std::conj((**mIntfCurrent)(0, 0))).real();
 }

@@ -98,35 +98,36 @@ list(APPEND MODELS_SOURCES
 	# EMT/EMT_Ph3_SynchronGeneratorVBRStandalone.cpp
 	EMT/EMT_Ph3_SynchronGeneratorTrStab.cpp
 
-	SP/SP_Ph1_VoltageSource.cpp
+	SP/SP_Ph1_AvVoltageSourceInverterDQ.cpp
 	SP/SP_Ph1_Capacitor.cpp
+	SP/SP_Ph1_CurrentSource.cpp
 	SP/SP_Ph1_Inductor.cpp
+	SP/SP_Ph1_Load.cpp
+	SP/SP_Ph1_NetworkInjection.cpp
+	SP/SP_Ph1_PiLine.cpp
+	SP/SP_Ph1_PQLoadCS.cpp
+	SP/SP_Ph1_PQNode.cpp
+	SP/SP_Ph1_PVNode.cpp
+	SP/SP_Ph1_ReducedOrderSynchronGeneratorVBR.cpp
 	SP/SP_Ph1_Resistor.cpp
 	SP/SP_Ph1_ResIndSeries.cpp
-	SP/SP_Ph1_AvVoltageSourceInverterDQ.cpp
 	SP/SP_Ph1_RXLine.cpp
-	SP/SP_Ph1_VoltageSourceInverter.cpp
-	SP/SP_Ph1_PiLine.cpp
-	SP/SP_Ph1_Load.cpp
-	SP/SP_Ph1_Switch.cpp
-	SP/SP_Ph1_Transformer.cpp
 	SP/SP_Ph1_SolidStateTransformer.cpp
 	SP/SP_Ph1_Shunt.cpp
 	SP/SP_Ph1_SynchronGenerator.cpp
-	SP/SP_Ph1_ReducedOrderSynchronGeneratorVBR.cpp
+	SP/SP_Ph1_SynchronGeneratorTrStab.cpp
 	SP/SP_Ph1_SynchronGenerator3OrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator4OrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator5bOrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator6aOrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator6bOrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator4OrderDCIM.cpp
-	SP/SP_Ph1_PQNode.cpp
-	SP/SP_Ph1_PVNode.cpp
-	SP/SP_Ph1_VDNode.cpp
-	SP/SP_Ph1_NetworkInjection.cpp
-	SP/SP_Ph1_SynchronGeneratorTrStab.cpp
+	SP/SP_Ph1_Switch.cpp
+	SP/SP_Ph1_Transformer.cpp
 	SP/SP_Ph1_varResSwitch.cpp
-
+	SP/SP_Ph1_VDNode.cpp
+	SP/SP_Ph1_VoltageSource.cpp
+	SP/SP_Ph1_VoltageSourceInverter.cpp
 	SP/SP_Ph3_Capacitor.cpp
 	SP/SP_Ph3_Inductor.cpp
 	SP/SP_Ph3_Resistor.cpp

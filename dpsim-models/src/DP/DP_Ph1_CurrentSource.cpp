@@ -28,12 +28,6 @@ void DP::Ph1::CurrentSource::setParameters(Complex current) {
 	mParametersSet = true;
 }
 
-SimPowerComp<Complex>::Ptr DP::Ph1::CurrentSource::clone(String name) {
-	auto copy = CurrentSource::make(name, mLogLevel);
-	copy->setParameters(**mCurrentRef);
-	return copy;
-}
-
 void DP::Ph1::CurrentSource::initializeFromNodesAndTerminals(Real frequency) {
 
 	(**mIntfVoltage)(0,0) = initialSingleVoltage(0) - initialSingleVoltage(1);
@@ -50,6 +44,7 @@ void DP::Ph1::CurrentSource::initializeFromNodesAndTerminals(Real frequency) {
 		Logger::phasorToString((**mIntfCurrent)(0,0)),
 		Logger::phasorToString(initialSingleVoltage(0)),
 		Logger::phasorToString(initialSingleVoltage(1)));
+	mSLog->flush();
 }
 
 void DP::Ph1::CurrentSource::mnaCompInitialize(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector) {

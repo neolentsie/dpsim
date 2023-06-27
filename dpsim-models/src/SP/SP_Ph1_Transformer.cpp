@@ -148,6 +148,8 @@ void SP::Ph1::Transformer::calculatePerUnitParameters(Real baseApparentPower, Re
 
     mRatioAbsPerUnit = mRatioAbs / **mNominalVoltageEnd1 * **mNominalVoltageEnd2;
     SPDLOG_LOGGER_INFO(mSLog, "Tap Ratio={} [pu]", mRatioAbsPerUnit);
+
+	mSLog->flush();
 }
 
 void SP::Ph1::Transformer::pfApplyAdmittanceMatrixStamp(SparseMatrixCompRow & Y) {
@@ -179,6 +181,8 @@ void SP::Ph1::Transformer::pfApplyAdmittanceMatrixStamp(SparseMatrixCompRow & Y)
 	Y.coeffRef(this->matrixNodeIndex(1), this->matrixNodeIndex(0)) += mY_element.coeff(1, 0);
 
 	SPDLOG_LOGGER_INFO(mSLog, "#### Y matrix stamping: {}", mY_element);
+
+	mSLog->flush();
 }
 
 

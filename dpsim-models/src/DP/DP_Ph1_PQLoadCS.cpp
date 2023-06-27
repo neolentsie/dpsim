@@ -43,14 +43,15 @@ void DP::Ph1::PQLoadCS::setParameters(Real activePower, Real reactivePower, Real
 	**mActivePower = activePower;
 	**mReactivePower = reactivePower;
 	**mNomVoltage = nomVolt;
-	mParametersSet = true;
-}
+	
+	SPDLOG_LOGGER_INFO(mSLog, 
+		"Active Power={}[W]"
+		"\nReactive Power={} [VAr]"
+		"\nNominal Voltage={} [V]", 
+		**mActivePower, **mReactivePower, **mNomVoltage);
+	mSLog->flush();
 
-///DEPRECATED: Delete method
-SimPowerComp<Complex>::Ptr DP::Ph1::PQLoadCS::clone(String name) {
-	auto copy = PQLoadCS::make(name, mLogLevel);
-	copy->setParameters(**mActivePower, **mReactivePower, **mNomVoltage);
-	return copy;
+	mParametersSet = true;
 }
 
 void DP::Ph1::PQLoadCS::initializeFromNodesAndTerminals(Real frequency) {

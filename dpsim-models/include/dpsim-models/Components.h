@@ -11,21 +11,19 @@
 #include <dpsim-models/Config.h>
 
 #include <dpsim-models/SP/SP_Ph1_AvVoltageSourceInverterDQ.h>
-#include <dpsim-models/SP/SP_Ph1_ResIndSeries.h>
-#include <dpsim-models/SP/SP_Ph1_RXLine.h>
-#include <dpsim-models/SP/SP_Ph1_VoltageSourceInverter.h>
-#include <dpsim-models/SP/SP_Ph1_PiLine.h>
-#include <dpsim-models/SP/SP_Ph1_Shunt.h>
-#include <dpsim-models/SP/SP_Ph1_Transformer.h>
-#include <dpsim-models/SP/SP_Ph1_SolidStateTransformer.h>
+#include <dpsim-models/SP/SP_Ph1_Capacitor.h>
+#include <dpsim-models/SP/SP_Ph1_CurrentSource.h>
+#include <dpsim-models/SP/SP_Ph1_Inductor.h>
 #include <dpsim-models/SP/SP_Ph1_Load.h>
-#include <dpsim-models/SP/SP_Ph1_Switch.h>
-#include <dpsim-models/SP/SP_Ph1_SynchronGenerator.h>
+#include <dpsim-models/SP/SP_Ph1_NetworkInjection.h>
+#include <dpsim-models/SP/SP_Ph1_PiLine.h>
+#include <dpsim-models/SP/SP_Ph1_PQLoadCS.h>
 #include <dpsim-models/SP/SP_Ph1_PQNode.h>
 #include <dpsim-models/SP/SP_Ph1_PVNode.h>
-#include <dpsim-models/SP/SP_Ph1_VDNode.h>
-#include <dpsim-models/SP/SP_Ph1_NetworkInjection.h>
-#include <dpsim-models/SP/SP_Ph1_VoltageSource.h>
+#include <dpsim-models/SP/SP_Ph1_ResIndSeries.h>
+#include <dpsim-models/SP/SP_Ph1_RXLine.h>
+#include <dpsim-models/SP/SP_Ph1_SolidStateTransformer.h>
+#include <dpsim-models/SP/SP_Ph1_SynchronGenerator.h>
 #include <dpsim-models/SP/SP_Ph1_SynchronGeneratorTrStab.h>
 #include <dpsim-models/SP/SP_Ph1_ReducedOrderSynchronGeneratorVBR.h>
 #include <dpsim-models/SP/SP_Ph1_SynchronGenerator3OrderVBR.h>
@@ -34,8 +32,13 @@
 #include <dpsim-models/SP/SP_Ph1_SynchronGenerator6aOrderVBR.h>
 #include <dpsim-models/SP/SP_Ph1_SynchronGenerator6bOrderVBR.h>
 #include <dpsim-models/SP/SP_Ph1_SynchronGenerator4OrderDCIM.h>
+#include <dpsim-models/SP/SP_Ph1_Shunt.h>
+#include <dpsim-models/SP/SP_Ph1_Switch.h>
+#include <dpsim-models/SP/SP_Ph1_Transformer.h>
 #include <dpsim-models/SP/SP_Ph1_varResSwitch.h>
-
+#include <dpsim-models/SP/SP_Ph1_VDNode.h>
+#include <dpsim-models/SP/SP_Ph1_VoltageSource.h>
+#include <dpsim-models/SP/SP_Ph1_VoltageSourceInverter.h>
 #include <dpsim-models/SP/SP_Ph3_Capacitor.h>
 #include <dpsim-models/SP/SP_Ph3_Inductor.h>
 #include <dpsim-models/SP/SP_Ph3_Resistor.h>

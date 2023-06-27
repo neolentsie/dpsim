@@ -62,18 +62,16 @@ class Reader:
         self.mpc_bus_data['area'] = self.mpc_bus_data['area'].astype(int)
         self.mpc_bus_data['zone'] = self.mpc_bus_data['zone'].astype(int)
         
-        
         #### Generators #####
         mpc_gen_raw = self.mpc_raw[self.mpc_name]['gen']
         gen_data_header = ["bus", "Pg", "Qg", "Qmax", "Qmin", "Vg", "mBase", "status",
                            "Pmax", "Pmin", "Pc1", "Pc2", "Qc1min", "Qc1max", "Qc2min",
                            "Qc2max", "ramp_agc", "ramp_10", "ramp_30", "ramp_q", "apf"]
         self.mpc_gen_data = pd.DataFrame(mpc_gen_raw, columns = gen_data_header)
-
+        
         # scipy.io.loadmat loads all matrix entries as double. Convert specific columns back to int
         self.mpc_gen_data['bus'] = self.mpc_gen_data['bus'].astype(int)
         self.mpc_gen_data['status'] = self.mpc_gen_data['status'].astype(int)
-       
        
         #### Branches #####
         # extract only first 13 columns since following columns include results
@@ -86,7 +84,7 @@ class Reader:
         self.mpc_branch_data['fbus'] = self.mpc_branch_data['fbus'].astype(int)
         self.mpc_branch_data['tbus'] = self.mpc_branch_data['tbus'].astype(int)
         self.mpc_branch_data['status'] = self.mpc_branch_data['status'].astype(int)
-
+        
         #### Additional fields: bus_names, bus_assets #####
         ## Obs.: not part of the original mpc format!
         self.mpc_bus_names_dict=dict()
@@ -137,13 +135,14 @@ class Reader:
         self.mpc_tg_data = None
         if 'tg' in self.mpc_raw_dyn[self.mpc_dyn_name]:
             mpc_tg_data = self.mpc_raw_dyn[self.mpc_dyn_name]['tg']
-            tg_data_header = ["bus", "R", "Ts", "Tc", "T3", "T4", "T5", "Tmax", "Tmin"]
+            tg_data_header = ["bus", "OmRef", "R", "Tmax", "Tmin", "Ts", "Tc", "T3", "T4", "T5"]
             self.mpc_tg_data = pd.DataFrame(np.matrix(mpc_tg_data), columns = tg_data_header)
             
             # scipy.io.loadmat loads all matrix entries as double. Convert specific columns back to int
             self.mpc_tg_data['bus'] = self.mpc_tg_data['bus'].astype(int)
             
-    def create_dpsim_objects(self, domain, frequency, log_level=dpsimpy.LogLevel.info):
+    def create_dpsim_objects(self, domain, frequency, log_level=dpsimpy.LogLevel.info, 
+                             with_pss=True, with_avr=True, with_tg=True):
         """
         Create dpsim objects with the data contained in the mpc files.
         The dpsim nodes are stored in the dict self.dpsimpy_busses_dict.
@@ -232,7 +231,8 @@ class Reader:
             # Generators
             elif bus_type == 2:
                 # map SG
-                self.map_synchronous_machine(index, bus_index, dpsimpy_components)
+                self.map_synchronous_machine(index, bus_index, dpsimpy_components,
+                                             with_pss=with_pss, with_tg=with_tg, with_avr=with_avr)
                 
                 # check if there is a load connected to PV bus (and create it)
                 self.map_energy_consumer(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.PV)
@@ -250,7 +250,8 @@ class Reader:
                 # # This way the mapping can be done exclusively with extnet componenent
                 
                 #self.map_network_injection(index, bus_index, map_network_injection)
-                self.map_synchronous_machine(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.VD)
+                self.map_synchronous_machine(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.VD,
+                                             with_pss=with_pss, with_tg=with_tg, with_avr=with_avr)
 
                 # check if there is a load connected to slack bus (and create it)
                 self.map_energy_consumer(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.VD)
@@ -365,7 +366,8 @@ class Reader:
     
         return bus_name
     
-    def map_synchronous_machine(self, index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.PV):
+    def map_synchronous_machine(self, index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.PV,
+                                with_pss=True, with_tg=True, with_avr=True):
         #
         gen_name = "Gen_N" + str(bus_index)
                 
@@ -377,11 +379,12 @@ class Reader:
         gen_p = gen_data['Pg']*mw_w   # gen ini. active power (gen['Pg'] in MVA)
         gen_q = gen_data['Qg']*mw_w   # gen ini. reactive power (gen['Qg'] in MVAr)
         gen_nom_s = abs(complex(gen_data['Pmax'], gen_data['Qmax'])) # gen nominal power (set default to mpc.baseMVA ? )
-                
+        
         gen = None
         if (self.domain == Domain.PF):
             gen = dpsimpy_components.SynchronGenerator(gen_name, self.log_level)
-            gen.set_parameters(gen_nom_s, gen_baseV, gen_p, gen_v, bus_type, gen_q)
+            #gen.set_parameters(gen_nom_s, gen_baseV, gen_p, gen_v, bus_type, gen_q)
+            gen.set_parameters(gen_baseS, gen_baseV, gen_p, gen_v, bus_type, gen_q)
             gen.set_base_voltage(gen_baseV) 
             gen.modify_power_flow_bus_type(bus_type)          
         else:
@@ -419,77 +422,85 @@ class Reader:
                                         H=H, Ld=Ld, Lq=Lq, L0=Ll, Ld_t=Ld_t, Lq_t=Lq_t, Td0_t=Td0_t, Tq0_t=Tq0_t,
                                         Ld_s=Ld_s, Lq_s=Lq_s, Td0_s=Td0_s, Tq0_s=Tq0_s, Taa=0)
             elif (gen_model==6):
-                gen = dpsimpy_components.SynchronGenerator6bOrderVBR(gen_name, self.log_level)
+                gen = dpsimpy_components.SynchronGenerator6aOrderVBR(gen_name, self.log_level)
                 gen.set_operational_parameters_per_unit(nom_power=gen_baseS, nom_voltage=gen_baseV, nom_frequency=self.mpc_freq, 
                                         H=H, Ld=Ld, Lq=Lq, L0=Ll, Ld_t=Ld_t, Lq_t=Lq_t, Td0_t=Td0_t, Tq0_t=Tq0_t,
-                                        Ld_s=Ld_s, Lq_s=Lq_s, Td0_s=Td0_s, Tq0_s=Tq0_s)		
+                                        Ld_s=Ld_s, Lq_s=Lq_s, Td0_s=Td0_s, Tq0_s=Tq0_s, Taa=0)		
             else:
                 raise Exception('Matpower reader does not support the generator model {}. Supported models are: "3", "4", "5", "6".'.format(gen_model))
         
         #### SG controllers ####
         if (self.domain != Domain.PF):
             # search for avr
-            if (self.mpc_avr_data is not None and int(bus_index) in self.mpc_avr_data['bus'].tolist()):
-                try:
-                    avr_row_idx = self.mpc_avr_data.index[self.mpc_avr_data['bus'] == int(bus_index)].tolist()[0]
-                    exciter_parameters = dpsimpy.signal.ExciterParameters()
-                    exciter_parameters.Ka = self.mpc_avr_data['Ka'][avr_row_idx]
-                    exciter_parameters.Ta = self.mpc_avr_data['Ta'][avr_row_idx]
-                    exciter_parameters.Kef = self.mpc_avr_data['Kef'][avr_row_idx]
-                    exciter_parameters.Tef = self.mpc_avr_data['Tef'][avr_row_idx]
-                    exciter_parameters.Kf = self.mpc_avr_data['Kf'][avr_row_idx]
-                    exciter_parameters.Tf = self.mpc_avr_data['Tf'][avr_row_idx]
-                    exciter_parameters.Tr = self.mpc_avr_data['Tr'][avr_row_idx]
-                    exciter_parameters.Aef = self.mpc_avr_data['Aef'][avr_row_idx]
-                    exciter_parameters.Bef = self.mpc_avr_data['Bef'][avr_row_idx]
-                    exciter_parameters.MaxVa = self.mpc_avr_data['Va_max'][avr_row_idx]
-                    exciter_parameters.MinVa = self.mpc_avr_data['Va_min'][avr_row_idx]
-                    exciter_parameters.Tb = self.mpc_avr_data['Tb'][avr_row_idx]
-                    exciter_parameters.Tc = self.mpc_avr_data['Tc'][avr_row_idx]
-                    gen.add_exciter(exciter_parameters=exciter_parameters, exciter_type=dpsimpy.ExciterType.DC1Simp)
-                except Exception as e:
-                    print("ERROR: " + str(e))
-                    raise Exception()
+            if with_avr:
+                if (self.mpc_avr_data is not None and int(bus_index) in self.mpc_avr_data['bus'].tolist()):
+                    try:
+                        avr_row_idx = self.mpc_avr_data.index[self.mpc_avr_data['bus'] == int(bus_index)].tolist()[0]
+                        exciter_parameters = dpsimpy.signal.ExciterParameters()
+                        exciter_parameters.Ka = self.mpc_avr_data['Ka'][avr_row_idx]
+                        exciter_parameters.Ta = self.mpc_avr_data['Ta'][avr_row_idx]
+                        exciter_parameters.Kef = self.mpc_avr_data['Kef'][avr_row_idx]
+                        exciter_parameters.Tef = self.mpc_avr_data['Tef'][avr_row_idx]
+                        exciter_parameters.Kf = self.mpc_avr_data['Kf'][avr_row_idx]
+                        exciter_parameters.Tf = self.mpc_avr_data['Tf'][avr_row_idx]
+                        exciter_parameters.Tr = self.mpc_avr_data['Tr'][avr_row_idx]
+                        exciter_parameters.Aef = self.mpc_avr_data['Aef'][avr_row_idx]
+                        exciter_parameters.Bef = self.mpc_avr_data['Bef'][avr_row_idx]
+                        exciter_parameters.MaxVa = self.mpc_avr_data['Va_max'][avr_row_idx]
+                        exciter_parameters.MinVa = self.mpc_avr_data['Va_min'][avr_row_idx]
+                        exciter_parameters.Tb = self.mpc_avr_data['Tb'][avr_row_idx]
+                        exciter_parameters.Tc = self.mpc_avr_data['Tc'][avr_row_idx]
+                        gen.add_exciter(exciter_parameters=exciter_parameters, exciter_type=dpsimpy.ExciterType.DC1Simp)
+                    except Exception as e:
+                        print("ERROR: " + str(e))
+                        raise Exception()
                 
             # search for pss
-            if (self.mpc_pss_data is not None and int(bus_index) in self.mpc_pss_data['bus'].tolist()):
-                try:
-                    pss_row_idx =  self.mpc_pss_data.index[self.mpc_pss_data['bus'] == int(bus_index)].tolist()[0]
-                    PSS = {}
-                    PSS["Kp"] = 0 
-                    PSS["Kv"] = 0 
-                    PSS["Kw"] = self.mpc_pss_data['Kw'][pss_row_idx]
-                    PSS["T1"] = self.mpc_pss_data['T1'][pss_row_idx]
-                    PSS["T2"] = self.mpc_pss_data['T2'][pss_row_idx]
-                    PSS["T3"] = self.mpc_pss_data['T3'][pss_row_idx]
-                    PSS["T4"] = self.mpc_pss_data['T4'][pss_row_idx]
-                    PSS["Vs_max"] = self.mpc_pss_data['Vs_max'][pss_row_idx]
-                    PSS["Vs_min"] = self.mpc_pss_data['Vs_min'][pss_row_idx]
-                    PSS["Tw"] = self.mpc_pss_data['Tw'][pss_row_idx]
-                    #gen.add_pss(**PSS)
-                except Exception as e:
-                    print("ERROR: " + str(e))
-                    raise Exception()
+            if with_pss:
+                if (self.mpc_pss_data is not None and int(bus_index) in self.mpc_pss_data['bus'].tolist()):
+                    try:
+                        pss_row_idx =  self.mpc_pss_data.index[self.mpc_pss_data['bus'] == int(bus_index)].tolist()[0]
+                        PSS = {}
+                        PSS["Kp"] = 0 
+                        PSS["Kv"] = 0 
+                        PSS["Kw"] = self.mpc_pss_data['Kw'][pss_row_idx]
+                        PSS["T1"] = self.mpc_pss_data['T1'][pss_row_idx]
+                        PSS["T2"] = self.mpc_pss_data['T2'][pss_row_idx]
+                        PSS["T3"] = self.mpc_pss_data['T3'][pss_row_idx]
+                        PSS["T4"] = self.mpc_pss_data['T4'][pss_row_idx]
+                        PSS["Vs_max"] = self.mpc_pss_data['Vs_max'][pss_row_idx]
+                        PSS["Vs_min"] = self.mpc_pss_data['Vs_min'][pss_row_idx]
+                        PSS["Tw"] = self.mpc_pss_data['Tw'][pss_row_idx]
+                        gen.add_pss(**PSS)
+                    except Exception as e:
+                        print("ERROR: " + str(e))
+                        raise Exception()
                 
             # search for turbine governors
-            if (self.mpc_tg_data is not None and int(bus_index) in self.mpc_tg_data['bus'].tolist()):
-                try:
-                    tg_row_idx =  self.mpc_tg_data.index[self.mpc_tg_data['bus'] == int(bus_index)].tolist()[0]
-                    Governor = {}
-                    #Governor["OmRef"] = self.mpc_tg_data['OmRef'][tg_row_idx]
-                    Governor["OmRef"] = 1
-                    Governor["R"] = self.mpc_tg_data['R'][tg_row_idx]
-                    Governor["Tmax"] = self.mpc_tg_data['Tmax'][tg_row_idx]
-                    Governor["Tmin"] = self.mpc_tg_data['Tmin'][tg_row_idx]
-                    Governor["Ts"] = self.mpc_tg_data['Ts'][tg_row_idx]
-                    Governor["Tc"] = self.mpc_tg_data['Tc'][tg_row_idx]
-                    Governor["T3"] = self.mpc_tg_data['T3'][tg_row_idx]
-                    Governor["T4"] = self.mpc_tg_data['T4'][tg_row_idx]
-                    Governor["T5"] = self.mpc_tg_data['T5'][tg_row_idx]
-                    gen.add_governor(**Governor)
-                except Exception as e:
-                    print("ERROR: " + str(e))
-                    raise Exception()
+            if with_tg:
+                print("Test0")
+                print(self.mpc_tg_data)
+                if (self.mpc_tg_data is not None and int(bus_index) in self.mpc_tg_data['bus'].tolist()):
+                    try:
+                        tg_row_idx =  self.mpc_tg_data.index[self.mpc_tg_data['bus'] == int(bus_index)].tolist()[0]
+                        Governor = {}
+                        #Governor["OmRef"] = self.mpc_tg_data['OmRef'][tg_row_idx]
+                        Governor["OmRef"] = 1
+                        Governor["R"] = self.mpc_tg_data['R'][tg_row_idx]
+                        Governor["Tmax"] = self.mpc_tg_data['Tmax'][tg_row_idx]
+                        Governor["Tmin"] = self.mpc_tg_data['Tmin'][tg_row_idx]
+                        Governor["Ts"] = self.mpc_tg_data['Ts'][tg_row_idx]
+                        Governor["Tc"] = self.mpc_tg_data['Tc'][tg_row_idx]
+                        Governor["T3"] = self.mpc_tg_data['T3'][tg_row_idx]
+                        Governor["T4"] = self.mpc_tg_data['T4'][tg_row_idx]
+                        Governor["T5"] = self.mpc_tg_data['T5'][tg_row_idx]
+                        gen.add_governor(**Governor)
+                        print("Test1")
+                        print(Governor)
+                        print("Test2")
+                    except Exception as e:
+                        print("ERROR: " + str(e))
+                        raise Exception()
         
         #
         self.dpsimpy_comp_dict[gen_name] = [gen]
@@ -512,15 +523,21 @@ class Reader:
         
         load_p = self.mpc_bus_data.at[index,'Pd'] * mw_w
         load_q = self.mpc_bus_data.at[index,'Qd'] * mw_w
-        #load_baseV = self.mpc_bus_data.at[index,'baseKV'] * kv_v
-        load_nominalV = self.mpc_bus_data.at[index,'baseKV'] * kv_v * self.mpc_bus_data.at[index,'Vm']
+        load_baseV = self.mpc_bus_data.at[index,'baseKV'] * kv_v
+        load_nominalV = load_baseV * self.mpc_bus_data.at[index,'Vm']
         
         load = None
-        if (self.domain==Domain.SP or self.domain==Domain.PF):
+        if (self.domain==Domain.PF):
             load = dpsimpy_components.Load(load_name, self.log_level)
+        elif (self.domain==Domain.SP):
+            load = dpsimpy_components.Load(load_name, self.log_level)
+            #load = dpsimpy_components.PQLoadCS(load_name, self.log_level)
         else:
            load = dpsimpy_components.RXLoad(load_name, self.log_level)
+        
+        # it influence the dyn simulation but not the power flow (the choice of load_nominalV)
         load.set_parameters(load_p, load_q, load_nominalV)
+        #load.set_parameters(load_p, load_q, load_baseV)
         
         if (self.domain==Domain.PF and bus_type==dpsimpy.PowerflowBusType.PQ):
             load.modify_power_flow_bus_type(bus_type)
@@ -574,14 +591,18 @@ class Reader:
             #shunt.set_parameters(gs, bs)
             #shunt.set_base_voltage(bus_baseV)
             shunt = dpsimpy_components.Load(shunt_name, self.log_level)
-            shunt.set_parameters(p, q, bus_baseV)
-            self.dpsimpy_comp_dict[shunt_name] = [shunt]
-            self.dpsimpy_comp_dict[shunt_name].append([self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
-        elif (self.domain==Domain.SP):
-            shunt = dpsimpy_components.Load(shunt_name, self.log_level)
+            #shunt.set_parameters(p, q, bus_baseV)
             shunt.set_parameters(p, q, V)
             self.dpsimpy_comp_dict[shunt_name] = [shunt]
             self.dpsimpy_comp_dict[shunt_name].append([self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
+        elif (self.domain==Domain.SP):
+            #shunt = dpsimpy_components.Load(shunt_name, self.log_level)
+            #shunt.set_parameters(p, q, V)
+            shunt = dpsimpy_components.Capacitor(shunt_name, self.log_level)
+            shunt.set_parameters(c)
+            self.dpsimpy_comp_dict[shunt_name] = [shunt]
+            #self.dpsimpy_comp_dict[shunt_name].append([self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
+            self.dpsimpy_comp_dict[shunt_name].append([dpsimpy.sp.SimNode.gnd, self.dpsimpy_busses_dict[self.get_node_name(bus_index)]]) # [to bus]
         else:
             # TODO
             pass
@@ -626,14 +647,15 @@ class Reader:
 
         self.system = dpsimpy.SystemTopology(self.mpc_freq, system_nodes, system_comp)
     
-    def load_mpc(self, frequency=60, domain=Domain.PF):
+    def load_mpc(self, frequency=60, domain=Domain.PF, with_pss=True, with_avr=True, with_tg=True):
         """
         Read mpc files and create DPsim topology
         
         @param frequency: system frequency
         @param domain: domain to be used in DPsim
         """
-        self.create_dpsim_objects(domain=domain, frequency=frequency)
+        self.create_dpsim_objects(domain=domain, frequency=frequency, 
+                                  with_pss=with_pss, with_avr=with_avr, with_tg=with_tg)
         self.create_dpsim_topology()
         
         return self.system

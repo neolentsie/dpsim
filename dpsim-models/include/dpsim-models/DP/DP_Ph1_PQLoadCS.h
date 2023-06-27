@@ -47,7 +47,6 @@ namespace Ph1 {
 			Logger::Level logLevel = Logger::Level::off);
 
 		void setParameters(Real activePower, Real reactivePower, Real nomVolt);
-		SimPowerComp<Complex>::Ptr clone(String name);
 
 		// #### General ####
 		/// Initializes component from power flow data

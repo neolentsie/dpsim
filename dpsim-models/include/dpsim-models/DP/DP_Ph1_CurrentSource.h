@@ -37,8 +37,6 @@ namespace Ph1 {
 
 		void setParameters(Complex current);
 
-		SimPowerComp<Complex>::Ptr clone(String copySuffix);
-
 		// #### General ####
 		/// Initializes component from power flow data
 		void initializeFromNodesAndTerminals(Real frequency);
