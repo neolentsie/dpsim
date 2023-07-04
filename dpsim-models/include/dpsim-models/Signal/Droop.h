@@ -21,29 +21,41 @@ namespace Signal {
 		public SharedFactory<Droop> {
 
 	protected:
-		/// Proportional constant of PI controller
-		Real mKp;
-		/// Integration constant of PI controller
-		Real mKi;
-		/// Nominal frequency
+
+		Real mTaup;
+		Real mTaui;
+		Real mMp;
+		
 		Real mOmegaNom;
-		/// Integration time step
+		Real mPowerSet;
+
         Real mTimeStep;
 
+		Real mOmegaInit = 0;
+		Real mPowerInit = 0;
+
+
 		/// matrix A of state space model
-		Matrix mA = Matrix::Zero(2, 2);
+		Matrix mA = Matrix::Zero(1, 1);
 		/// matrix B of state space model
-		Matrix mB = Matrix::Zero(2, 2);
+		Matrix mB = Matrix::Zero(1, 3);
 		/// matrix C of state space model
-		Matrix mC = Matrix::Zero(2, 2);
+		Matrix mC = Matrix::Zero(1, 1);
 		/// matrix D of state space model
-		Matrix mD = Matrix::Zero(2, 2);
+		Matrix mD = Matrix::Zero(1, 3);
 
 	public:
 
+		const Attribute<Real>::Ptr mVc_d;
+		const Attribute<Real>::Ptr mVc_q;
+		const Attribute<Real>::Ptr mIrc_d;
+		const Attribute<Real>::Ptr mIrc_q;
+
+		const Attribute<Real>::Ptr mOmega;
+		const Attribute<Real>::Ptr mPowerInst;
+
 		/// This is never explicitely set to reference anything, so the outside code is responsible for setting up the reference.
 		const Attribute<Real>::Ptr mInputRef;
-
 		/// Previous Input
         const Attribute<Matrix>::Ptr mInputPrev;
         /// Current Input
@@ -59,13 +71,15 @@ namespace Signal {
 
 		Droop(String name, Logger::Level logLevel = Logger::Level::off);
 		/// Setter for Droop parameters
-		void setParameters(Real kpDroop, Real kiDroop, Real omegaNom);
+		void setParameters(Real powerSet, Real omegaNom);
 		/// Setter for simulation parameters
-		void setSimulationParameters(Real timestep);
+		void setControllerParameters(Real taup, Real taui, Real mp);
 		/// Setter for initial values
-        void setInitialValues(Real input_init, Matrix state_init, Matrix output_init);
+        void setSimulationParameters(Real timestep);
 		/// Composition of A, B, C, D matrices based on Droop parameters
-		void composeStateSpaceMatrices();
+		void setInitialStateValues(Real omegaInit, Real powerInit);
+
+		void initializeStateSpaceModel(Real omegaNom, Real timeStep, Attribute<Matrix>::Ptr leftVector);
 		/// pre step operations
 		void signalPreStep(Real time, Int timeStepCount);
 		/// step operations

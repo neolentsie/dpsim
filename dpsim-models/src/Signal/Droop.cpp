@@ -15,22 +15,61 @@ Droop::Droop(String name, Logger::Level logLevel) :
 	SimSignalComp(name, name, logLevel),
     mInputRef(Attribute<Real>::createDynamic("input_ref", mAttributes)),
     /// CHECK: Which of these really need to be attributes?
-    mInputPrev(Attribute<Matrix>::create("input_prev", mAttributes, Matrix::Zero(2,1))),
-    mStatePrev(Attribute<Matrix>::create("state_prev", mAttributes, Matrix::Zero(2,1))),
-    mOutputPrev(Attribute<Matrix>::create("output_prev", mAttributes, Matrix::Zero(2,1))),
-    mInputCurr(Attribute<Matrix>::create("input_curr", mAttributes, Matrix::Zero(2,1))),
-    mStateCurr(Attribute<Matrix>::create("state_curr", mAttributes, Matrix::Zero(2,1))),
-    mOutputCurr(Attribute<Matrix>::create("output_curr", mAttributes, Matrix::Zero(2,1))) { }
+
+    //Previous
+    mInputPrev(Attribute<Matrix>::create("input_prev", mAttributes, Matrix::Zero(3,1))),
+    mStatePrev(Attribute<Matrix>::create("state_prev", mAttributes, Matrix::Zero(1,1))),
+    mOutputPrev(Attribute<Matrix>::create("output_prev", mAttributes, Matrix::Zero(1,1))),
+
+    //Currently
+    mInputCurr(Attribute<Matrix>::create("input_curr", mAttributes, Matrix::Zero(3,1))),
+    mStateCurr(Attribute<Matrix>::create("state_curr", mAttributes, Matrix::Zero(1,1))),
+    mOutputCurr(Attribute<Matrix>::create("output_curr", mAttributes, Matrix::Zero(1,1))), 
+    
+    //Measured from system
+    mVc_d(Attribute<Real>::createDynamic("Vc_d", mAttributes)),
+	mVc_q(Attribute<Real>::createDynamic("Vc_q", mAttributes)),
+	mIrc_d(Attribute<Real>::createDynamic("Irc_d", mAttributes)),
+	mIrc_q(Attribute<Real>::createDynamic("Irc_q", mAttributes)),
+    mOmega(Attribute<Real>::createDynamic("OmegaSystem", mAttributes)),
+    mPowerInst(Attribute<Real>::createDynamic("PowerSystem", mAttributes))
+    { 
+	    mSLog->info("Create {} {}", type(), name);
+    }
 
 
-void Droop::setParameters(Real kpDroop, Real kiDroop, Real omegaNom) {
-    mKp = kpDroop;
-    mKi = kiDroop;
+// set Parameters
+void Droop::setParameters(Real powerSet, Real omegaNom) {
+   
     mOmegaNom = omegaNom;
-    mSLog->info("Kp = {}, Ki = {}", mKp, mKi);
+    mPowerSet = powerSet;
+  
+    mSLog->info("Omega Nominal = {}, Power Set Point = {}", mPowerSet, mOmegaNom);
+}
 
-    // First entry of input vector is constant omega
-    (**mInputCurr)(0,0) = mOmegaNom;
+//setter for controller parameters and setting up of system matrices
+void Droop::setControllerParameters(Real taup, Real taui, Real mp) {
+    
+    mTaup = taup;
+    mTaui = taui;
+    mMp = mp;
+	
+    mSLog->info("Taup = {}, Taui = {}, Mp = {}", mMp, mTaui, mTaup);
+
+    /// [x] = omegaSystem
+    /// [y] = omegaSystem
+    /// [u] = omegaNominal, powerSystem, powerSet
+
+    mA <<  -1/mTaup;
+    mB <<  1/mTaup, -mMp/mTaup, mMp/mTaup;
+    mC <<  1;
+    mD <<  0, 0, 0;
+
+    mSLog->info("State space matrices:");
+    mSLog->info("A = \n{}", mA);
+    mSLog->info("B = \n{}", mB);
+    mSLog->info("C = \n{}", mC);
+    mSLog->info("D = \n{}", mD);
 }
 
 void Droop::setSimulationParameters(Real timestep) {
@@ -38,30 +77,32 @@ void Droop::setSimulationParameters(Real timestep) {
     mSLog->info("Integration step = {}", mTimeStep);
 }
 
-void Droop::setInitialValues(Real input_init, Matrix state_init, Matrix output_init) {
-	(**mInputCurr)(1,0) = input_init;
-    **mStateCurr = state_init;
-    **mOutputCurr = output_init;
+void Droop::setInitialStateValues(Real omegaInit, Real powerInit) {
+	
+    mOmegaInit = omegaInit;
+	mPowerInit = powerInit;
 
-    mSLog->info("Initial values:");
-    mSLog->info("inputCurrInit = ({}, {}), stateCurrInit = ({}, {}), outputCurrInit = ({}, {})", (**mInputCurr)(0,0), (**mInputCurr)(1,0), (**mInputPrev)(0,0), (**mInputPrev)(1,0), (**mStateCurr)(0,0), (**mStateCurr)(1,0), (**mStatePrev)(0,0), (**mStatePrev)(1,0));
+	mSLog->info("Initial State Value Parameters:");
+	mSLog->info("Omega Init = {}, Power Init = {}", omegaInit, powerInit);
 }
 
-void Droop::composeStateSpaceMatrices() {
-    mA <<   0,  mKi,
-            0,  0;
-    mB <<   1,  mKp,
-            0,  1;
-    mC <<   1,  0,
-            0,  1;
-    mD <<   0,  0,
-            0,  0;
+//Creating state space model out of the variables
+void Droop::initializeStateSpaceModel(Real omegaNom, Real timeStep, Attribute<Matrix>::Ptr leftVector) {
 
-    mSLog->info("State space matrices:");
-    mSLog->info("A = \n{}", mA);
-    mSLog->info("B = \n{}", mB);
-    mSLog->info("C = \n{}", mC);
-    mSLog->info("D = \n{}", mD);
+	mTimeStep = timeStep;
+	mOmegaNom = omegaNom;
+
+	// initialization of input --> [u]
+	**mInputCurr << mOmegaNom, **mOmega, **mPowerInst;
+	mSLog->info("Initialization of input: \n" + Logger::matrixToString(**mInputCurr));
+
+	// initialization of states --> [x]
+	**mStateCurr << mOmegaInit;
+	mSLog->info("Initialization of states: \n" + Logger::matrixToString(**mStateCurr));
+
+	// initialization of output --> [y]
+	**mOutputCurr = mC * **mStateCurr + mD * **mInputCurr;
+	mSLog->info("Initialization of output: \n" + Logger::matrixToString(**mOutputCurr));
 }
 
 void Droop::signalAddPreStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes) {
@@ -78,22 +119,26 @@ void Droop::signalPreStep(Real time, Int timeStepCount) {
 }
 
 void Droop::signalAddStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes) {
-	attributeDependencies.push_back(mInputRef);
+	
+    **mPowerInst = **mVc_d * **mIrc_d + **mVc_d * **mIrc_d; 
+    attributeDependencies.push_back(mOmega);
+	attributeDependencies.push_back(mPowerInst);
 	modifiedAttributes.push_back(mInputCurr);
     modifiedAttributes.push_back(mOutputCurr);
 };
 
 void Droop::signalStep(Real time, Int timeStepCount) {
-    (**mInputCurr)(1,0) = **mInputRef;
+    // get current inputs
+	**mInputCurr << mOmegaNom, **mOmega, **mPowerInst;
+    mSLog->debug("Time {}\n: inputCurr = \n{}\n , inputPrev = \n{}\n , statePrev = \n{}", time, **mInputCurr, **mInputPrev, **mStatePrev);
 
-    mSLog->info("Time {}:", time);
-    mSLog->info("Input values: inputCurr = ({}, {}), inputPrev = ({}, {}), stateCurr = ({}, {}), statePrev = ({}, {})", (**mInputCurr)(0,0), (**mInputCurr)(1,0), (**mInputPrev)(0,0), (**mInputPrev)(1,0), (**mStateCurr)(0,0), (**mStateCurr)(1,0), (**mStatePrev)(0,0), (**mStatePrev)(1,0));
+	// calculate new states
+	**mStateCurr = Math::StateSpaceTrapezoidal(**mStatePrev, mA, mB, mTimeStep, **mInputCurr, **mInputPrev);
+	mSLog->debug("stateCurr = \n {}", **mStateCurr);
 
-    **mStateCurr = Math::StateSpaceTrapezoidal(**mStatePrev, mA, mB, mTimeStep, **mInputCurr, **mInputPrev);
-    **mOutputCurr = mC * **mStateCurr + mD * **mInputCurr;
-
-    mSLog->info("State values: stateCurr = ({}, {})", (**mStateCurr)(0,0), (**mStateCurr)(1,0));
-    mSLog->info("Output values: outputCurr = ({}, {}):", (**mOutputCurr)(0,0), (**mOutputCurr)(1,0));
+	// calculate new outputs
+	**mOutputCurr = mC * **mStateCurr + mD * **mInputCurr;
+	mSLog->debug("Output values: outputCurr = \n{}", **mOutputCurr);
 }
 
 Task::List Droop::getTasks() {
