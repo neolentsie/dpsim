@@ -90,6 +90,7 @@
 #include <dpsim-models/EMT/EMT_Ph3_AvVoltageSourceInverterDQ.h>
 #include <dpsim-models/EMT/EMT_Ph3_VSIVoltageControlDQ.h>
 #include <dpsim-models/EMT/EMT_Ph3_VSIVoltageControlVCO.h>
+#include <dpsim-models/EMT/EMT_Ph3_VSIVoltageControlDroop.h>
 #include <dpsim-models/EMT/EMT_Ph3_Resistor.h>
 #include <dpsim-models/EMT/EMT_Ph3_SeriesResistor.h>
 #include <dpsim-models/EMT/EMT_Ph3_SeriesSwitch.h>
