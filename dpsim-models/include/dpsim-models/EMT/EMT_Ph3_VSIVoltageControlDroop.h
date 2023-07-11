@@ -107,7 +107,8 @@ namespace Ph3 {
 		const Attribute<Matrix>::Ptr mVs;
 
 		// Droop
-		const Attribute<Real>::Ptr mDroopOutput;
+		const Attribute<Matrix>::Ptr mDroopOutput;
+
         const Attribute<Real>::Ptr mVCOOutput;
 
 		// input, state and output vector for logging

@@ -25,7 +25,8 @@ EMT::Ph3::VSIVoltageControlDroop::VSIVoltageControlDroop(String uid, String name
 	mElecPassivePower(Attribute<Real>::create("Q_elec", mAttributes, 0)),
 	mVsref(Attribute<Matrix>::create("Vsref", mAttributes, Matrix::Zero(3,1))),
 	mVs(Attribute<Matrix>::createDynamic("Vs", mAttributes)),
-	mDroopOutput(Attribute<Real>::createDynamic("Droop_output", mAttributes)),
+	mDroopOutput(Attribute<Matrix>::createDynamic("Droop_output", mAttributes)),
+	mVCOOutput(Attribute<Real>::createDynamic("VCO_output", mAttributes)),
 	mVoltagectrlInputs(Attribute<Matrix>::createDynamic("voltagectrl_inputs", mAttributes)),
 	mVoltagectrlOutputs(Attribute<Matrix>::createDynamic("voltagectrl_outputs", mAttributes)),
 	mVoltagectrlStates(Attribute<Matrix>::createDynamic("voltagectrl_states", mAttributes))  {
@@ -77,10 +78,10 @@ EMT::Ph3::VSIVoltageControlDroop::VSIVoltageControlDroop(String uid, String name
 
 	// Droop
 	mDroop->mInputRef->setReference(mOmegaN);
-	mDroopOutput->setReference(mOmegaSys);
+	mDroopOutput->setReference(mDroop->mOutputCurr);
 
     // VCO
-    mVCO->mInputRef->setReference(mDroopOutput);
+    mVCO->mInputRef->setReference(mOmegaN);
 	mVCOOutput->setReference(mVCO->mOutputCurr);
 
 	// Voltage controller
