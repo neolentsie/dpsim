@@ -44,7 +44,7 @@ void Droop::setParameters(Real powerSet, Real omegaNom) {
     mOmegaNom = omegaNom;
     mPowerSet = powerSet;
   
-    mSLog->info("Omega Nominal = {}, Power Set Point = {}", mPowerSet, mOmegaNom);
+    mSLog->info("Omega Nominal = {}, Power Set Point = {}", mOmegaNom, mPowerSet);
 }
 
 //setter for controller parameters and setting up of system matrices

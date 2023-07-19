@@ -137,8 +137,8 @@ void EMT::Ph3::VSIVoltageControlDroop::setControllerParameters(Real Kp_voltageCt
 	mSLog->info("Voltage Loop: K_p = {}, K_i = {}", Kp_voltageCtrl, Ki_voltageCtrl);
 	mSLog->info("Current Loop: K_p = {}, K_i = {}", Kp_currCtrl, Ki_currCtrl);
 
-	// TODO: add and use Omega_nominal instead of Omega_cutoff
 	mDroop->setParameters(PowerSet, Omega_nominal);
+	//mDroop->setControllerParameters(mTaup, mTaui, mp);
 	mVoltageControllerVSI->setControllerParameters(Kp_voltageCtrl, Ki_voltageCtrl, Kp_currCtrl, Ki_currCtrl, Omega_nominal);
 }
 
