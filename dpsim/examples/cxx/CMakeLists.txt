@@ -41,6 +41,7 @@ set(CIRCUIT_SOURCES
 	Circuits/EMT_Slack_PiLine_VSI_with_PF_Init.cpp
 	Circuits/EMT_Slack_PiLine_VSI_Ramp_with_PF_Init.cpp
 	Circuits/EMT_VSI_DroopControl.cpp 
+	Circuits/EMT_VSI_DroopControl_LoadStep.cpp 
 
 	# SP examples
 	Circuits/SP_Circuits.cpp
