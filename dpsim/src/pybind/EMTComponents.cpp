@@ -219,7 +219,7 @@ void addEMTPh3Components(py::module_ mEMTPh3) {
 		.def("set_parameters", &CPS::EMT::Ph3::VSIVoltageControlDQ::setParameters, "sys_omega"_a, "vdref"_a, "vqref"_a)
 		.def("set_filter_parameters", &CPS::EMT::Ph3::VSIVoltageControlDQ::setFilterParameters, "Lf"_a, "Cf"_a, "Rf"_a, "Rc"_a)
 		.def("set_controller_parameters", &CPS::EMT::Ph3::VSIVoltageControlDQ::setControllerParameters,
-			"Kp_pll"_a, "Ki_pll"_a, "Kp_voltage_ctrl"_a, "Ki_voltage_ctrl"_a, "Kp_curr_ctrl"_a, "Ki_curr_ctrl"_a, "omega_cutoff"_a)
+			"Kp_voltage_ctrl"_a, "Ki_voltage_ctrl"_a, "Kp_curr_ctrl"_a, "Ki_curr_ctrl"_a, "omega_cutoff"_a)
 		.def("set_transformer_parameters", &CPS::EMT::Ph3::VSIVoltageControlDQ::setTransformerParameters,
 			"nom_voltage_end_1"_a, "nom_voltage_end_2"_a, "rated_power"_a, "ratio_abs"_a, "ratio_phase"_a, "resistance"_a, "inductance"_a, "omega"_a)
 		.def("set_initial_state_values", &CPS::EMT::Ph3::VSIVoltageControlDQ::setInitialStateValues,

@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
 	auto load2EMT = EMT::Ph3::RXLoad::make("Load2", Logger::Level::debug);
 	load2EMT->setParameters(CPS::Math::singlePhasePowerToThreePhase(load2ActivePower), CPS::Math::singlePhasePowerToThreePhase(load2ReactivePower), scenario.systemNominalVoltage);
 	
-	auto pv = EMT::Ph3::VSIVoltageControlVCO::make("pv", "pv", Logger::Level::debug, false);
+	auto pv = EMT::Ph3::VSIVoltageControlDQ::make("pv", "pv", Logger::Level::debug, false);
 	pv->setParameters(scenario.systemNominalOmega, scenario.Vdref, scenario.Vqref);
 	pv->setControllerParameters(scenario.KpVoltageCtrl, scenario.KiVoltageCtrl, scenario.KpCurrCtrl, scenario.KiCurrCtrl, scenario.systemNominalOmega);
 	// pv->setControllerParameters(scenario.KpVoltageCtrl, scenario.KiVoltageCtrl, scenario.KpCurrCtrl, scenario.KiCurrCtrl, scenario.KpPLL, scenario.KiPLL, scenario.OmegaCutoff);
