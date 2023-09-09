@@ -94,7 +94,8 @@ namespace Signal {
 		
 		/// Setter for initial state values
 		void setInitialStateValues(Real phi_dInit, Real phi_qInit, Real gamma_dInit, Real gamma_qInit);
-
+		///
+		void calculateInitialStateValues(Complex Vsref_dq);
 		/// Initialize vectors of state space model
 		void initializeStateSpaceModel(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector);
 		/// Update B matrix due to its dependence on the input

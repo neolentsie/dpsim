@@ -174,6 +174,18 @@ void VoltageControllerVSI::setInitialStateValues(Real phi_dInit, Real phi_qInit,
 	SPDLOG_LOGGER_INFO(mSLog, "Gamma_dInit = {}, Gamma_qInit = {}", gamma_dInit, gamma_qInit);
 }
 
+void VoltageControllerVSI::calculateInitialStateValues(Complex Vsref_dq) {
+	// calculate initial states
+	mPhi_dInit = **mIrc_d / mKiVoltageCtrld;
+	mPhi_qInit = **mIrc_q / mKiVoltageCtrld; 
+	mGamma_dInit = (Vsref_dq.real() - **mVc_d) / mKiCurrCtrld;
+	mGamma_qInit = (Vsref_dq.imag() - **mVc_q) / mKiCurrCtrld;
+
+	SPDLOG_LOGGER_INFO(mSLog, "Calculate State Value Parameters:");
+	SPDLOG_LOGGER_INFO(mSLog, "Phi_dInit = {}, Phi_qInit = {}", mPhi_dInit, mPhi_qInit);
+	SPDLOG_LOGGER_INFO(mSLog, "Gamma_dInit = {}, Gamma_qInit = {}", mGamma_dInit, mGamma_qInit);
+}
+
 //Creating state space model out of the variables
 void VoltageControllerVSI::initializeStateSpaceModel(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector) {
 
