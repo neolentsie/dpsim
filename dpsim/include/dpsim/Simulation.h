@@ -143,6 +143,9 @@ namespace DPsim {
 		/// Subroutine for MNA only because there are many MNA options
 		template <typename VarType>
 		void createMNASolver();
+
+		template <typename VarType>
+		void createIterativeMNASolver();
 		/// Prepare schedule for simulation
 		void prepSchedule();
 
