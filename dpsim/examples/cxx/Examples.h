@@ -524,6 +524,139 @@ namespace SGIB {
     };
 }
 
+namespace ScenarioShreya { //named like his just for now
+    //Scenario used to Test HVDC Cigre
+
+    struct ScenarioConfig {
+        Real VnomHV = 380e3;
+        Real nomFreq = 50;
+        
+        Real nomOmega= nomFreq * 2 * PI;
+
+        // Generator parameters
+        Real setPointActivePower = 400e6;
+        Real setPointReactivePower = 0;
+        Real setPointVoltage = 1*VnomHV;
+
+        // Line parameters (R/X = 1)
+        Real lineLength = 1;
+        Real lineResistance = 0.02 * lineLength; 
+        Real lineInductance = 0.8532-3 * lineLength /nomOmega;
+        // Real lineCapacitance = 0.0135-6 * lineLength / nomOmega;  Considerig it is already in half
+        Real lineCapacitance = 0.5*0.0135-6 * lineLength / nomOmega;
+        Real lineConductance = 0.041e-6 * lineLength;
+
+        // PV controller parameters
+        Real scalingKp = 1;
+        Real scalingKi = 1;
+
+        Real KpPLL = 0.05*scalingKp;
+        Real KiPLL = 1*scalingKi;
+        Real KpPowerCtrl = 0*scalingKp;
+        Real KiPowerCtrl = 33*scalingKi;
+        Real KpCurrCtrl = 0.48*scalingKp;
+        Real KiCurrCtrl = 149*scalingKi;
+        Real OmegaCutoff = 2 * PI * nomFreq;
+
+        // Initial state values
+        Real thetaPLLInit = 0; // only for debug
+        Real phiPLLInit = 0; // only for debug
+        Real phi_dInit = 0;
+        Real phi_qInit = 0;
+        Real gamma_dInit = 0;
+        Real gamma_qInit = 0;
+
+        // Nominal generated power values of PV
+        Real pvNominalVoltage = 200e3;
+        Real pvNominalActivePower = 1200e6;
+        Real pvNominalReactivePower = 0;
+
+        // PV filter parameters
+        Real Lf = 0.02;
+        Real Cf = 789.3e-6;
+        Real Rf = 0.1;
+        Real Rc = 0.1;
+
+        // PV connection transformer parameters
+        Real nomVoltageEnd1 = 200e3;
+        Real nomVoltageEnd2 = 380e3;
+        Real transformerNominalPower = 1200e6;
+        Real transformerInductance = 19e-3;
+
+
+        // Further parameters
+        Real systemOmega = 2 * PI * nomFreq;
+    };
+
+}
+
+namespace YazdaniShreya { //named like his just for now
+    //Scenario used to Test HVDC Cigre
+
+    struct ScenarioConfig {
+        Real VnomHV = 138e3;
+        Real nomFreq = 60;
+        
+        Real nomOmega= nomFreq * 2 * PI;
+
+        // Generator parameters
+        Real setPointActivePower = 36e6;
+        Real setPointReactivePower = 0;
+        Real setPointVoltage = 1*VnomHV;
+
+        // Line parameters (R/X = 1)
+        Real lineLength = 1;
+        Real lineResistance = 1e-6* lineLength; 
+        Real lineInductance = 0.2-3;
+        // Real lineCapacitance = 0.0135-6 * lineLength / nomOmega;  Considerig it is already in half
+        Real lineCapacitance = 1e-9* lineLength / nomOmega;
+        Real lineConductance = 0.041e-6 * lineLength;
+
+        Real scalingKp = 1;
+        Real scalingKi = 1;
+
+        Real KpPLL = 0.2*scalingKp;
+        Real KiPLL = 0.2*scalingKi;
+        Real KpPowerCtrl = 0*scalingKp;
+        Real KiPowerCtrl = 33*scalingKi;
+        Real KpCurrCtrl = 0.48*scalingKp;
+        Real KiCurrCtrl = 149*scalingKi;
+        Real OmegaCutoff = 2 * PI * nomFreq;
+
+        // Initial state values
+        Real thetaPLLInit = 0; // only for debug
+        Real phiPLLInit = 0; // only for debug
+        Real phi_dInit = 0;
+        Real phi_qInit = 0;
+        Real gamma_dInit = 0;
+        Real gamma_qInit = 0;
+
+        // Nominal generated power values of PV
+        Real pvNominalVoltage = 17.9e3;
+        Real pvNominalActivePower = 36e6;
+        Real pvNominalReactivePower = 0;
+
+        // PV filter parameters
+        Real Lf = 1.93e-3;
+        Real Cf = 1e-9;
+        // Real Cf = 5e-6;
+        Real Rf = 25;
+        Real Rc = 1e-6;
+
+        // PV connection transformer parameters
+        Real nomVoltageEnd1 = 17.9e3;
+        Real nomVoltageEnd2 = 138e3;
+        Real transformerNominalPower = 36e6;
+        Real transformerInductance = 112e-3;
+
+
+        // Further parameters
+        Real systemOmega = 2 * PI * nomFreq;
+    };
+
+}
+
+
 namespace CIGREMV {
 
     struct ScenarioConfig {
