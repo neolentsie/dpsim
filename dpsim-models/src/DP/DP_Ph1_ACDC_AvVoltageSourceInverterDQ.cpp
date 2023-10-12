@@ -28,11 +28,11 @@ DP::Ph1::AvVoltageSourceInverterDQ::AvVoltageSourceInverterDQ(String uid, String
 	mPowerctrlStates(mAttributes->createDynamic<Matrix>("powerctrl_states")) {
 
 	if (withTrafo) {
-		setVirtualNodeNumber(4);
+		setVirtualNodeNumber(5);
 		mConnectionTransformer = DP::Ph1::Transformer::make(**mName + "_trans", **mName + "_trans", mLogLevel, false);
 		addMNASubComponent(mConnectionTransformer, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, true);
 	} else {
-		setVirtualNodeNumber(3);
+		setVirtualNodeNumber(4);
 	}
 	mWithConnectionTransformer = withTrafo;
 	setTerminalNumber(1);
@@ -49,7 +49,7 @@ DP::Ph1::AvVoltageSourceInverterDQ::AvVoltageSourceInverterDQ(String uid, String
 	mSubCtrledVoltageSource = DP::Ph1::VoltageSource::make(**mName + "_src", mLogLevel);
 	//Added by Shreya
 	mDCLinkVoltageSource = DP::Ph1::VoltageSource::make(**mName + "_src", mLogLevel);
-	mDCLinkIdealTransformer = DP::Ph1::Transformer::make(**mName + "_trans", **mName + "_trans", mLogLevel, false);
+
 	mSubCapacitorDCSource = DP::Ph1::Capacitor::make(**mName + "_capDCSource", mLogLevel);
 
 
@@ -57,9 +57,11 @@ DP::Ph1::AvVoltageSourceInverterDQ::AvVoltageSourceInverterDQ(String uid, String
 	addMNASubComponent(mSubResistorC, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, false);
 	addMNASubComponent(mSubCapacitorF, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, true);
 	addMNASubComponent(mSubInductorF, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, true);
-
+	addMNASubComponent(mSubCapacitorDCSource, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, true);
 	// Pre-step of the subcontrolled voltage source is handled explicitly in mnaParentPreStep
 	addMNASubComponent(mSubCtrledVoltageSource, MNA_SUBCOMP_TASK_ORDER::NO_TASK, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, true);
+	//Adding DCLinkSource
+	addMNASubComponent(mDCLinkVoltageSource, MNA_SUBCOMP_TASK_ORDER::NO_TASK, MNA_SUBCOMP_TASK_ORDER::TASK_BEFORE_PARENT, true);
 
 	SPDLOG_LOGGER_INFO(mSLog, "Electrical subcomponents: ");
 	for (auto subcomp: mSubComponents)
@@ -88,7 +90,7 @@ DP::Ph1::AvVoltageSourceInverterDQ::AvVoltageSourceInverterDQ(String uid, String
 	mPowerctrlOutputs->setReference(mPowerControllerVSI->mOutputCurr);
 }
 
-void DP::Ph1::AvVoltageSourceInverterDQ::setParameters(Real sysOmega, Real sysVoltNom, Real Pref, Real Qref) {
+void DP::Ph1::AvVoltageSourceInverterDQ::setParameters(Real sysOmega, Real sysVoltNom, Real Pref, Real Qref,Real Vdclink) {
 	mParametersSet = true;
 
 	SPDLOG_LOGGER_INFO(mSLog, "General Parameters:");
@@ -97,10 +99,12 @@ void DP::Ph1::AvVoltageSourceInverterDQ::setParameters(Real sysOmega, Real sysVo
 
 	mPowerControllerVSI->setParameters(Pref, Qref);
 
+
 	**mOmegaN = sysOmega;
 	mVnom = sysVoltNom;
 	**mPref = Pref;
 	**mQref = Qref;
+	**mvdclink = Vdclink;
 }
 
 void DP::Ph1::AvVoltageSourceInverterDQ::setTransformerParameters(Real nomVoltageEnd1, Real nomVoltageEnd2, Real ratedPower,
@@ -119,6 +123,7 @@ void DP::Ph1::AvVoltageSourceInverterDQ::setTransformerParameters(Real nomVoltag
 		// TODO: resistive losses neglected so far (mWithResistiveLosses=false)
 		mConnectionTransformer->setParameters(mTransformerNominalVoltageEnd1, mTransformerNominalVoltageEnd2, mTransformerRatedPower, mTransformerRatioAbs, mTransformerRatioPhase, mTransformerResistance, mTransformerInductance);
 }
+
 
 void DP::Ph1::AvVoltageSourceInverterDQ::setControllerParameters(Real Kp_pll, Real Ki_pll,
 	Real Kp_powerCtrl, Real Ki_powerCtrl, Real Kp_currCtrl, Real Ki_currCtrl, Real Omega_cutoff) {
@@ -187,31 +192,36 @@ void DP::Ph1::AvVoltageSourceInverterDQ::initializeFromNodesAndTerminals(Real fr
 	Complex icfInit = vcInit * Complex(0., 2. * PI * frequency * mCf);
 	Complex vfInit = vcInit - (filterInterfaceInitialCurrent - icfInit) * Complex(0., 2. * PI * frequency * mLf);
 	Complex vsInit = vfInit - (filterInterfaceInitialCurrent - icfInit) * Complex(mRf, 0);
+
+
+
 	mVirtualNodes[0]->setInitialVoltage(vsInit);
 	mVirtualNodes[1]->setInitialVoltage(vfInit);
 	mVirtualNodes[2]->setInitialVoltage(vcInit);
 
+	mVirtualNodes[4]->setInitialVoltage(**vdclink)
+
 	// Set parameters electrical subcomponents
 	(**mVsref)(0,0) = mVirtualNodes[0]->initialSingleVoltage();
 	mSubCtrledVoltageSource->setParameters((**mVsref)(0,0));
+	mDCLinkVoltageSource->setParameters(vdclink);
 
 	// Connect electrical subcomponents
 
 	//Added by Shreya
-	mDCLinkVoltageSource->connect({ SimNode::GND, mVirtualNodes[0] });
-	mDCLinkIdealTransformer->connect({ mVirtualNodes[0],  mVirtualNodes[1]});
-	mSubCapacitorDCSource->connect({ mVirtualNodes[0], SimNode::GND });
+	mDCLinkVoltageSource->connect({ SimNode::GND, mVirtualNodes[4] });
+	
+	mSubCapacitorDCSource->connect({ mVirtualNodes[4], SimNode::GND });
 //-----------------------------------------------------------------------------//
 
-	mSubCtrledVoltageSource->connect({ mVirtualNodes[1], mVirtualNodes[2] });
-	mSubResistorF->connect({ mVirtualNodes[2], mVirtualNodes[3] });
-	mSubInductorF->connect({ mVirtualNodes[3], mVirtualNodes[4] });
-	mSubCapacitorF->connect({ mVirtualNodes[4], SimNode::GND });
+	mSubCtrledVoltageSource->connect({ SimNode::GND, mVirtualNodes[0] });
+	mSubResistorF->connect({ mVirtualNodes[0], mVirtualNodes[1] });
+	mSubInductorF->connect({ mVirtualNodes[1], mVirtualNodes[2] });
+	mSubCapacitorF->connect({ mVirtualNodes[2], SimNode::GND });
 	if (mWithConnectionTransformer)
-		mSubResistorC->connect({ mVirtualNodes[4],  mVirtualNodes[5]});
+		mSubResistorC->connect({ mVirtualNodes[2],  mVirtualNodes[3]});
 	else
-		mSubResistorC->connect({ mVirtualNodes[4],  mTerminals[0]->node()});
-
+		mSubResistorC->connect({ mVirtualNodes[2],  mTerminals[0]->node()});
 	
 
 	// Initialize electrical subcomponents
