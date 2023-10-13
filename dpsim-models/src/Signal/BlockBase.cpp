@@ -17,8 +17,7 @@ BlockBase::BlockBase(String name, Logger::Level logLevel) :
     /// CHECK: Which of these really need to be attributes?
     mInputPrev(mAttributes->create<Real>("input_prev")),
     mStatePrev(mAttributes->create<Real>("state_prev")),
-    mOutputPrev(mAttributes->create<Real>("output_prev")),--
-	
+    mOutputPrev(mAttributes->create<Real>("output_prev")),
     mInputCurr(mAttributes->create<Real>("input_curr")),
     mStateCurr(mAttributes->create<Real>("state_curr")),
     mOutputCurr(mAttributes->create<Real>("output_curr")) { }

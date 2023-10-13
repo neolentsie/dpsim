@@ -24,10 +24,14 @@ namespace Signal {
 		/// Integration time step
         Real mTimeStep;
 
+		Real mK_p;
+
 	public:
 
 		/// This is never explicitely set to reference anything, so the outside code is responsible for setting up the reference.
 		const Attribute<Real>::Ptr mInputRef;
+		/// This is never explicitely set to reference anything, so the outside code is responsible for setting up the reference.
+		const Attribute<Real>::Ptr mOutputRef;
 		/// Previous Input
         const Attribute<Real>::Ptr mInputPrev;
         /// Current Input
@@ -41,9 +45,11 @@ namespace Signal {
         /// Current Output
         const Attribute<Real>::Ptr mOutputCurr;
 
+
+
 		Gain(String name, Logger::Level logLevel = Logger::Level::off);
 		/// Setter for integration step parameter
-		void setParameters(Real timestep);
+		void setParameters(Real K_p);
 		/// Setter for initial values
         void setInitialValues(Real input_init, Real state_init, Real output_init);
 		/// pre step operations

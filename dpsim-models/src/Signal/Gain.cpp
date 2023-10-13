@@ -20,13 +20,15 @@ Gain::Gain(String name, Logger::Level logLevel) :
     mOutputPrev(mAttributes->create<Real>("output_prev")),
     mInputCurr(mAttributes->create<Real>("input_curr")),
     mStateCurr(mAttributes->create<Real>("state_curr")),
-    mOutputCurr(mAttributes->create<Real>("output_curr")) { }
+    mOutputCurr(mAttributes->create<Real>("output_curr")),
+	mOutputRef(mAttributes->createDynamic<Real>("output_ref")) { }
 
-void Gain::setParameters(Real timestep) {
-    mTimeStep = timestep;
+void Gain::setParameters(Real K_p) {
+    mK_p = K_p;
 
-    SPDLOG_LOGGER_INFO(mSLog, "Integration step = {}", mTimeStep);
+    SPDLOG_LOGGER_INFO(mSLog, "K_p = {}", mK_p);
 }
+
 
 void Gain::setInitialValues(Real input_init, Real state_init, Real output_init) {
 	**mInputCurr = input_init;
@@ -62,10 +64,9 @@ void Gain::signalStep(Real time, Int timeStepCount) {
     SPDLOG_LOGGER_INFO(mSLog, "Time {}:", time);
     SPDLOG_LOGGER_INFO(mSLog, "Input values: inputCurr = {}, inputPrev = {}, statePrev = {}", **mInputCurr, **mInputPrev, **mStatePrev);
 
-	/*
-    **mStateCurr =**mStatePrev + mTimeStep/2.0* **mInputCurr + mTimeStep/2.0* **mInputPrev;
-    **mOutputCurr = **mStateCurr;
-	*/
+
+    **mOutputCurr = mK_p * **mInputCurr;
+
 
     SPDLOG_LOGGER_INFO(mSLog, "State values: stateCurr = {}", **mStateCurr);
     SPDLOG_LOGGER_INFO(mSLog, "Output values: outputCurr = {}:", **mOutputCurr);
