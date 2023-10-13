@@ -146,6 +146,8 @@ list(APPEND MODELS_SOURCES
 	Signal/SignalGenerator.cpp
 	Signal/FrequencyRampGenerator.cpp
 	Signal/CosineFMGenerator.cpp
+	Signal/BlockBase.cpp
+	Signal/Gain.cpp
 )
 
 if(WITH_CIM)

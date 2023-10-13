@@ -16,9 +16,9 @@
 
 namespace CPS {
 namespace Signal {
-	class Integrator :
+	class BlockBase :
 		public SimSignalComp,
-		public SharedFactory<Integrator> {
+		public SharedFactory<BlockBase> {
 
 	protected:
 		/// Integration time step
@@ -41,7 +41,7 @@ namespace Signal {
         /// Current Output
         const Attribute<Real>::Ptr mOutputCurr;
 
-		Integrator(String name, Logger::Level logLevel = Logger::Level::off);
+		BlockBase(String name, Logger::Level logLevel = Logger::Level::off);
 		/// Setter for integration step parameter
 		void setParameters(Real timestep);
 		/// Setter for initial values
@@ -59,24 +59,24 @@ namespace Signal {
 
         class PreStep : public Task {
         public:
-			PreStep(Integrator& integrator) :
-                Task(**integrator.mName + ".PreStep"), mIntegrator(integrator) {
-					mIntegrator.signalAddPreStepDependencies(mPrevStepDependencies, mAttributeDependencies, mModifiedAttributes);
+			PreStep(BlockBase& blockBase) :
+                Task(**blockBase.mName + ".PreStep"), mBlockBase(blockBase) {
+					mBlockBase.signalAddPreStepDependencies(mPrevStepDependencies, mAttributeDependencies, mModifiedAttributes);
 			}
-			void execute(Real time, Int timeStepCount) { mIntegrator.signalPreStep(time, timeStepCount); };
+			void execute(Real time, Int timeStepCount) { mBlockBase.signalPreStep(time, timeStepCount); };
 		private:
-			Integrator& mIntegrator;
+			BlockBase& mBlockBase;
         };
 
 		class Step : public Task {
 		public:
-			Step(Integrator& integrator) :
-				Task(**integrator.mName + ".Step"), mIntegrator(integrator) {
-					mIntegrator.signalAddStepDependencies(mPrevStepDependencies, mAttributeDependencies, mModifiedAttributes);
+			Step(BlockBase& blockBase) :
+				Task(**blockBase.mName + ".Step"), mBlockBase(blockBase) {
+					mBlockBase.signalAddStepDependencies(mPrevStepDependencies, mAttributeDependencies, mModifiedAttributes);
 			}
-			void execute(Real time, Int timeStepCount) { mIntegrator.signalStep(time, timeStepCount); };
+			void execute(Real time, Int timeStepCount) { mBlockBase.signalStep(time, timeStepCount); };
 		private:
-			Integrator& mIntegrator;
+			BlockBase& mBlockBase;
 		};
 	};
 }
