@@ -62,7 +62,7 @@ public:
 		Bool si = false,
 		CPS::Domain sd = CPS::Domain::DP,
 		Solver::Type st = Solver::Type::MNA,
-		DirectLinearSolverImpl mi = DirectLinearSolverImpl::SparseLU,
+		DirectLinearSolverImpl mi = DirectLinearSolverImpl::KLU,
 		String spn = "plugin.so",
 		String params = "default.json"
 	);
@@ -80,13 +80,12 @@ public:
 		Bool si = false,
 		CPS::Domain sd = CPS::Domain::DP,
 		Solver::Type st = Solver::Type::MNA,
-		DirectLinearSolverImpl mi = DirectLinearSolverImpl::SparseLU,
+		DirectLinearSolverImpl mi = DirectLinearSolverImpl::KLU,
 		String spn = "plugin.so"
 	);
 
 	void parseArguments(int argc, char *argv[]);
 	void showUsage();
-	void showCopyright();
 
 	double timeStep;
 	double duration;

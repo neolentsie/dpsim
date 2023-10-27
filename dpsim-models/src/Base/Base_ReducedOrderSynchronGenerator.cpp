@@ -28,6 +28,10 @@ Base::ReducedOrderSynchronGenerator<Real>::ReducedOrderSynchronGenerator(
 	// declare state variables
 	**mVdq0 = Matrix::Zero(3,1);
 	**mIdq0 = Matrix::Zero(3,1);
+
+	// default model is Norton equivalent
+	mModelAsNortonSource = true;
+	SPDLOG_LOGGER_DEBUG(this->mSLog, "SG per default modelled as Norton equivalent");
 }
 
 template <>
@@ -49,15 +53,23 @@ Base::ReducedOrderSynchronGenerator<Complex>::ReducedOrderSynchronGenerator(
 	///FIXME: The mVdq0 and mVdq member variables are mutually exclusive and carry the same attribute name. Maybe they can be unified?
 	**mVdq = Matrix::Zero(2,1);
 	**mIdq = Matrix::Zero(2,1);
+
+	// default model is Norton equivalent
+	mModelAsNortonSource = true;
+	SPDLOG_LOGGER_DEBUG(this->mSLog, "SG per default modelled as Norton equivalent");
 }
 
 template <typename VarType>
-void Base::ReducedOrderSynchronGenerator<VarType>::setModelAsCurrentSource(Bool modelAsCurrentSource) {
-	mModelAsCurrentSource = modelAsCurrentSource;
+void Base::ReducedOrderSynchronGenerator<VarType>::setModelAsNortonSource(Bool modelAsCurrentSource) {
+	mModelAsNortonSource = modelAsCurrentSource;
 
-	if (!mModelAsCurrentSource)
-		// SG is modeled as voltage source
+	if (mModelAsNortonSource) {
+		this->setVirtualNodeNumber(0);
+		SPDLOG_LOGGER_DEBUG(this->mSLog, "Setting SG model to Norton equivalent");
+	} else {
 		this->setVirtualNodeNumber(2);
+		SPDLOG_LOGGER_DEBUG(this->mSLog, "Setting SG model to Thevenin equivalent");
+	}
 }
 
 template <typename VarType>
@@ -192,15 +204,15 @@ template <typename VarType>
 void Base::ReducedOrderSynchronGenerator<VarType>::calculateVBRconstants() {
 
 	Real Tf = 0;
-	if (mSGOrder == SGOrder::SG6aOrder) {
-		if ((mLd_t!=0) && (mTd0_t!=0))
-			mYd = (mTd0_s / mTd0_t) * (mLd_s / mLd_t) * (mLd - mLd_t);
-
-		if ((mLq_t!=0) && (mTq0_t!=0))
-			mYq = (mTq0_s / mTq0_t) * (mLq_s / mLq_t) * (mLq - mLq_t);
-
-		if (mTd0_t != 0)
-			Tf = mTaa / mTd0_t;
+	if (mSGOrder == SGOrder::SG5Order) {
+		mYd = (mTd0_s / mTd0_t) * (mLd_s / mLd_t) * (mLd - mLd_t);
+		mYq = 0.0;
+		Tf = mTaa / mTd0_t;
+	}
+	else if (mSGOrder == SGOrder::SG6aOrder) {
+		mYd = (mTd0_s / mTd0_t) * (mLd_s / mLd_t) * (mLd - mLd_t);
+		mYq = (mTq0_s / mTq0_t) * (mLq_s / mLq_t) * (mLq - mLq_t);
+		Tf = mTaa / mTd0_t;
 	} else {
 		mYd = 0;
 		mYq = 0;
@@ -217,7 +229,15 @@ void Base::ReducedOrderSynchronGenerator<VarType>::calculateVBRconstants() {
 	mBq_t = (2 * mTd0_t - mTimeStep) / (2 * mTd0_t + mTimeStep);
 	mDq_t = mTimeStep * (1 - Tf) / (2 * mTd0_t + mTimeStep);
 
-	if (mSGOrder == SGOrder::SG6aOrder || mSGOrder == SGOrder::SG6bOrder) {
+	if (mSGOrder == SGOrder::SG5Order) {
+		mAd_s = (mTimeStep * (mLq - mLq_s)) / (2 * mTq0_s + mTimeStep);
+		mCd_s = (2 * mTq0_s - mTimeStep) / (2 * mTq0_s + mTimeStep);
+		mAq_s = (-mTimeStep * Zq_s + mTimeStep * mAq_t ) / (2 * mTd0_s + mTimeStep);
+		mBq_s = (mTimeStep * mBq_t + mTimeStep) / (2 * mTd0_s + mTimeStep);
+		mCq_s = (2 * mTd0_s - mTimeStep) / (2 * mTd0_s + mTimeStep);
+		mDq_s = (mTimeStep * mDq_t + Tf * mTimeStep) / (2 * mTd0_s + mTimeStep);
+	}
+	else if (mSGOrder == SGOrder::SG6aOrder || mSGOrder == SGOrder::SG6bOrder) {
 		mAd_s = (mTimeStep * Zd_s + mTimeStep * mAd_t) / (2 * mTq0_s + mTimeStep);
 		mBd_s = (mTimeStep * mBd_t + mTimeStep) / (2 * mTq0_s + mTimeStep);
 		mCd_s = (2 * mTq0_s - mTimeStep) / (2 * mTq0_s + mTimeStep);
@@ -238,7 +258,7 @@ void Base::ReducedOrderSynchronGenerator<VarType>::calculateResistanceMatrixCons
 		mA = -mAd_t - mLq_t;
 		mB = mLd_t - mAq_t;
 	}
-	if (mSGOrder == SGOrder::SG6aOrder || mSGOrder == SGOrder::SG6bOrder) {
+	if (mSGOrder == SGOrder::SG5Order || mSGOrder == SGOrder::SG6aOrder || mSGOrder == SGOrder::SG6bOrder) {
 		mA = -mLq_s - mAd_s;
 		mB = mLd_s - mAq_s;
 	}
@@ -261,6 +281,25 @@ void Base::ReducedOrderSynchronGenerator<VarType>::setInitialValues(
 	mInitCurrent = mInitCurrent / mBase_I_RMS;
 
 	mInitialValuesSet = true;
+
+	SPDLOG_LOGGER_DEBUG(this->mSLog,
+		"\n--- Set initial values  ---"
+		"\nInitial active power: {:}W = {:} p.u."
+		"\nInitial reactive power W: {:}W = {:} p.u."
+		"\nInitial terminal voltage magnitude: {:} p.u."
+		"\nInitial terminal voltage phase: {:} rad = ({:}°)"
+		"\nInitial current magnitude: {:} p.u."
+		"\nInitial current phase: {:} rad = ({:}°)"
+		"\n--- Set initial values finished ---\n",
+
+		mInitElecPower.real(), mInitElecPower.real() / mNomPower,
+		mInitElecPower.imag(), mInitElecPower.imag() / mNomPower,
+		Math::abs(mInitVoltage),
+		Math::phase(mInitVoltage), Math::phaseDeg(mInitVoltage),
+		Math::abs(mInitCurrent),
+		Math::phase(mInitCurrent), Math::phaseDeg(mInitCurrent)
+	);
+	this->mSLog->flush();
 }
 
 template <>
@@ -310,7 +349,7 @@ void Base::ReducedOrderSynchronGenerator<Real>::initializeFromNodesAndTerminals(
 	// initialize theta and calculate transform matrix
 	**mThetaMech = **mDelta - PI / 2.;
 
-	SPDLOG_LOGGER_INFO(this->mSLog,
+	SPDLOG_LOGGER_DEBUG(this->mSLog,
 		"\n--- Initialization from power flow  ---"
 		"\nInitial Vd (per unit): {:f}"
 		"\nInitial Vq (per unit): {:f}"
@@ -384,7 +423,7 @@ void Base::ReducedOrderSynchronGenerator<Complex>::initializeFromNodesAndTermina
 	// initialize theta and calculate transform matrix
 	**mThetaMech = **mDelta - PI / 2.;
 
-	SPDLOG_LOGGER_INFO(this->mSLog,
+	SPDLOG_LOGGER_DEBUG(this->mSLog,
 		"\n--- Initialization from power flow  ---"
 		"\nInitial Vd (per unit): {:f}"
 		"\nInitial Vq (per unit): {:f}"
@@ -437,22 +476,30 @@ void Base::ReducedOrderSynchronGenerator<Complex>::mnaCompPreStep(Real time, Int
 		**mMechTorque = mTurbineGovernor->step(**mOmMech, mTimeStep);
 	}
 
-	// calculate mechanical variables at t=k+1 with forward euler
-	if (mSimTime>0.0) {
-		**mElecTorque = ((**mVdq)(0,0) * (**mIdq)(0,0) + (**mVdq)(1,0) * (**mIdq)(1,0));
+	// predict mechanical vars for all reduced-order models in the same manner
+	if (mSimTime > 0.0) {
+		// predict omega at t=k+1 (forward euler)
+		**mElecTorque = (**mVdq)(0,0) * (**mIdq)(0,0) + (**mVdq)(1,0) * (**mIdq)(1,0);
 		**mOmMech = **mOmMech + mTimeStep * (1. / (2. * mH) * (mMechTorque_prev - **mElecTorque));
+
+		// predict theta and delta at t=k+1 (backward euler)
 		**mThetaMech = **mThetaMech + mTimeStep * (**mOmMech * mBase_OmMech);
 		**mDelta = **mDelta + mTimeStep * (**mOmMech - 1.) * mBase_OmMech;
 	}
 
+	// model specific calculation of electrical vars
 	stepInPerUnit();
+
+	// stamp model specific right side vector after calculation of electrical vars
 	(**mRightVector).setZero();
-	mnaApplyRightSideVectorStamp(**mRightVector);
+	mnaCompApplyRightSideVectorStamp(**mRightVector);
 }
 
 template <>
 void Base::ReducedOrderSynchronGenerator<Real>::mnaCompPreStep(Real time, Int timeStepCount) {
 	mSimTime = time;
+
+	// update controller variables
 	if (mHasExciter) {
 		mEf_prev = **mEf;
 		**mEf = mExciter->step((**mVdq0)(0,0), (**mVdq0)(1,0), mTimeStep);
@@ -462,17 +509,23 @@ void Base::ReducedOrderSynchronGenerator<Real>::mnaCompPreStep(Real time, Int ti
 		**mMechTorque = mTurbineGovernor->step(**mOmMech, mTimeStep);
 	}
 
-	// calculate mechanical variables at t=k+1 with forward euler
-	if (mSimTime>0.0) {
-		**mElecTorque = ((**mVdq0)(0,0) * (**mIdq0)(0,0) + (**mVdq0)(1,0) * (**mIdq0)(1,0));
+	// predict mechanical vars for all reduced-order models in the same manner
+	if (mSimTime > 0.0) {
+		// predict omega at t=k+1 (forward euler)
+		**mElecTorque = (**mVdq0)(0,0) * (**mIdq0)(0,0) + (**mVdq0)(1,0) * (**mIdq0)(1,0);
 		**mOmMech = **mOmMech + mTimeStep * (1. / (2. * mH) * (mMechTorque_prev - **mElecTorque));
+
+		// predict theta and delta at t=k+1 (backward euler)
 		**mThetaMech = **mThetaMech + mTimeStep * (**mOmMech * mBase_OmMech);
 		**mDelta = **mDelta + mTimeStep * (**mOmMech - 1.) * mBase_OmMech;
 	}
 
+	// model specific calculation of electrical vars
 	stepInPerUnit();
+
+	// stamp model specific right side vector after calculation of electrical vars
 	(**mRightVector).setZero();
-	mnaApplyRightSideVectorStamp(**mRightVector);
+	mnaCompApplyRightSideVectorStamp(**mRightVector);
 }
 
 template <typename VarType>
@@ -486,7 +539,7 @@ void Base::ReducedOrderSynchronGenerator<VarType>::mnaCompPreStep(Real time, Int
 	mSimTime = time;
 	stepInPerUnit();
 	(**mRightVector).setZero();
-	this->mnaApplyRightSideVectorStamp(**mRightVector);
+	mnaCompApplyRightSideVectorStamp(**mRightVector);
 }
 
 template <typename VarType>

@@ -34,8 +34,9 @@ void DP::Ph1::SynchronGenerator4OrderVBR::specificInitialization() {
 	(**mEdq_t)(0,0) = (**mVdq)(0,0) - (**mIdq)(1,0) * mLq_t;
 	(**mEdq_t)(1,0) = (**mVdq)(1,0) + (**mIdq)(0,0) * mLd_t;
 
-	SPDLOG_LOGGER_INFO(mSLog, 
+	SPDLOG_LOGGER_INFO(mSLog,
 		"\n--- Model specific initialization  ---"
+		"\nSG model: 4th order"
 		"\nInitial Ed_t (per unit): {:f}"
 		"\nInitial Eq_t (per unit): {:f}"
 		"\n--- Model specific initialization finished ---",
@@ -47,16 +48,21 @@ void DP::Ph1::SynchronGenerator4OrderVBR::specificInitialization() {
 
 void DP::Ph1::SynchronGenerator4OrderVBR::stepInPerUnit() {
 
+	// update DP-DQ transforms
+	mDomainInterface.updateDQToDPTransform(**mThetaMech, mSimTime);
+	mDomainInterface.updateDPToDQTransform(**mThetaMech, mSimTime);
+
 	// calculate Edq_t at t=k
 	(**mEdq_t)(0,0) = (**mVdq)(0,0) - (**mIdq)(1,0) * mLq_t;
 	(**mEdq_t)(1,0) = (**mVdq)(1,0) + (**mIdq)(0,0) * mLd_t;
 
-	// VBR history voltage
-	calculateAuxiliarVariables();
+	// Update time-varying reactance matrix
 	calculateConductanceMatrix();
+
+	// VBR history voltage
 	mEh_vbr(0,0) = mAd_t * (**mIdq)(1,0) + mBd_t * (**mEdq_t)(0,0);
 	mEh_vbr(1,0) = mAq_t * (**mIdq)(0,0) + mBq_t * (**mEdq_t)(1,0) + mDq_t * mEf_prev + mDq_t * (**mEf);
 
 	// convert Edq_t into the abc reference frame
-	mEvbr = (mKvbr * mEh_vbr * mBase_V_RMS)(0,0);
+	mEvbr = mDomainInterface.applyDQToDPTransform(mEh_vbr) * mBase_V_RMS;
 }

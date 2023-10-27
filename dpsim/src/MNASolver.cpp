@@ -22,8 +22,8 @@ MnaSolver<VarType>::MnaSolver(String name, CPS::Domain domain, CPS::Logger::Leve
 	Solver(name, logLevel), mDomain(domain) {
 
 	// Raw source and solution vector logging
-	mLeftVectorLog = std::make_shared<DataLogger>(name + "_LeftVector", logLevel != CPS::Logger::Level::off);
-	mRightVectorLog = std::make_shared<DataLogger>(name + "_RightVector", logLevel != CPS::Logger::Level::off);
+	mLeftVectorLog = std::make_shared<DataLogger>(name + "_LeftVector", logLevel == CPS::Logger::Level::trace);
+	mRightVectorLog = std::make_shared<DataLogger>(name + "_RightVector", logLevel == CPS::Logger::Level::trace);
 }
 
 template <typename VarType>
@@ -311,6 +311,11 @@ void MnaSolver<VarType>::identifyTopologyObjects() {
 
 	for (auto comp : mSystem.mComponents) {
 
+		auto genComp = std::dynamic_pointer_cast<CPS::MNASyncGenInterface>(comp);
+		if (genComp) {
+			mSyncGen.push_back(genComp);
+		}
+		
 		auto swComp = std::dynamic_pointer_cast<CPS::MNASwitchInterface>(comp);
 		if (swComp) {
 			mSwitches.push_back(swComp);

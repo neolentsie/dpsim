@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
 	String faultBusName= "BUS6";
 	Real inertiaScalingFactor = 1.0;
 	String logDirectory = "logs";
-	DirectLinearSolverImpl implementation = DirectLinearSolverImpl::SparseLU;
+	DirectLinearSolverImpl implementation = DirectLinearSolverImpl::KLU;
 
 	// Find CIM files
 	std::list<fs::path> filenames;
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 			auto genPF = systemPF.component<CPS::SP::Ph1::SynchronGenerator>(comp->name());
 			genReducedOrder->terminal(0)->setPower(-genPF->getApparentPower());
 			genReducedOrder->scaleInertiaConstant(inertiaScalingFactor);
-			genReducedOrder->setModelAsCurrentSource(false);
+			genReducedOrder->setModelAsNortonSource(false);
 		}
 	}
 

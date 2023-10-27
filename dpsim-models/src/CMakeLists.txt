@@ -37,12 +37,17 @@ list(APPEND MODELS_SOURCES
 	DP/DP_Ph1_ReducedOrderSynchronGeneratorVBR.cpp
 	DP/DP_Ph1_SynchronGenerator3OrderVBR.cpp
 	DP/DP_Ph1_SynchronGenerator4OrderVBR.cpp
+	DP/DP_Ph1_SynchronGenerator4OrderPCM.cpp
+	DP/DP_Ph1_SynchronGenerator4OrderTPM.cpp
+	DP/DP_Ph1_SynchronGenerator5OrderVBR.cpp
+	DP/DP_Ph1_SynchronGenerator6OrderPCM.cpp
 	DP/DP_Ph1_SynchronGenerator6aOrderVBR.cpp
 	DP/DP_Ph1_SynchronGenerator6bOrderVBR.cpp
 	DP/DP_Ph1_Inverter.cpp
 	DP/DP_Ph1_AvVoltageSourceInverterDQ.cpp
 	DP/DP_Ph1_NetworkInjection.cpp
 	DP/DP_Ph1_varResSwitch.cpp
+	DP/DP_Ph1_DPDQInterface.cpp
 
 	DP/DP_Ph3_VoltageSource.cpp
 	DP/DP_Ph3_Capacitor.cpp
@@ -83,9 +88,11 @@ list(APPEND MODELS_SOURCES
 	EMT/EMT_Ph3_ReducedOrderSynchronGeneratorVBR.cpp
 	EMT/EMT_Ph3_SynchronGenerator3OrderVBR.cpp
 	EMT/EMT_Ph3_SynchronGenerator4OrderVBR.cpp
+	EMT/EMT_Ph3_SynchronGenerator5OrderVBR.cpp
 	EMT/EMT_Ph3_SynchronGenerator6aOrderVBR.cpp
 	EMT/EMT_Ph3_SynchronGenerator6bOrderVBR.cpp
 	EMT/EMT_Ph3_SynchronGeneratorDQ.cpp
+	EMT/EMT_Ph3_SynchronGenerator4OrderPCM.cpp
 	EMT/EMT_Ph3_SynchronGeneratorDQTrapez.cpp
 	# EMT/EMT_Ph3_SynchronGeneratorDQSmpl.cpp
 	# EMT/EMT_Ph3_SynchronGeneratorDQSmplCompSource.cpp
@@ -111,9 +118,9 @@ list(APPEND MODELS_SOURCES
 	SP/SP_Ph1_ReducedOrderSynchronGeneratorVBR.cpp
 	SP/SP_Ph1_SynchronGenerator3OrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator4OrderVBR.cpp
+	SP/SP_Ph1_SynchronGenerator5OrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator6aOrderVBR.cpp
 	SP/SP_Ph1_SynchronGenerator6bOrderVBR.cpp
-	SP/SP_Ph1_SynchronGenerator4OrderDCIM.cpp
 	SP/SP_Ph1_PQNode.cpp
 	SP/SP_Ph1_PVNode.cpp
 	SP/SP_Ph1_VDNode.cpp
@@ -164,11 +171,6 @@ endif()
 if(WITH_GSL)
 	list(APPEND MODELS_INCLUDE_DIRS ${GSL_INCLUDE_DIRS})
 	list(APPEND MODELS_LIBRARIES ${GSL_LIBRARIES})
-endif()
-
-if(WITH_KLU)
-	list(APPEND MODELS_INCLUDE_DIRS ${KLU_INCLUDE_DIRS})
-	list(APPEND MODELS_LIBRARIES ${KLU_LIBRARIES})
 endif()
 
 target_link_libraries(dpsim-models PUBLIC ${MODELS_LIBRARIES})
