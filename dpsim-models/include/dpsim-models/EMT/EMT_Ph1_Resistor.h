@@ -13,6 +13,7 @@
 #include <dpsim-models/MNASimPowerComp.h>
 #include <dpsim-models/Solver/MNAInterface.h>
 #include <dpsim-models/Base/Base_Ph1_Resistor.h>
+#include <dpsim-models/Solver/EigenvalueCompInterface.h>
 
 namespace CPS {
 namespace EMT {
@@ -21,7 +22,8 @@ namespace Ph1 {
 	class Resistor :
 		public MNASimPowerComp<Real>,
 		public Base::Ph1::Resistor,
-		public SharedFactory<Resistor> {
+		public SharedFactory<Resistor>,
+		public EigenvalueCompInterface {
 	protected:
 	public:
 		/// Defines UID, name, component parameters and logging level
@@ -50,6 +52,10 @@ namespace Ph1 {
 		void mnaCompPostStep(Real time, Int timeStepCount, Attribute<Matrix>::Ptr &leftVector) override;
 		/// Add MNA post step dependencies
 		void mnaCompAddPostStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes, Attribute<Matrix>::Ptr &leftVector) override;
+
+		// Implementation of EigenExtractCompInterface methods
+		void stampEigenvalueMatrices(Matrix& signMatrix, Matrix& discretizationMatrix, Matrix& branchNodeIncidenceMatrix) final;
+		void setBranchIdx(int i) final;
 	};
 }
 }
