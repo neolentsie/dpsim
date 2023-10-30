@@ -11,6 +11,7 @@
 #include <dpsim-models/MNASimPowerComp.h>
 #include <dpsim-models/Solver/MNAInterface.h>
 #include <dpsim-models/Base/Base_Ph1_Inductor.h>
+#include <dpsim-models/Solver/EigenvalueCompInterface.h>
 
 namespace CPS {
 namespace EMT {
@@ -25,7 +26,8 @@ namespace Ph1 {
 	class Inductor :
 		public MNASimPowerComp<Real>,
 		public Base::Ph1::Inductor,
-		public SharedFactory<Inductor> {
+		public SharedFactory<Inductor>,
+		public EigenvalueCompInterface {
 	protected:
 		/// DC equivalent current source [A]
 		Real mEquivCurrent;
@@ -64,6 +66,10 @@ namespace Ph1 {
 
 		/// Add MNA post step dependencies
 		void mnaCompAddPostStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes, Attribute<Matrix>::Ptr &leftVector) override;
+		
+		// Implementation of EigenExtractCompInterface methods
+		void stampEigenvalueMatrices(Matrix& signMatrix, Matrix& discretizationMatrix, Matrix& branchNodeIncidenceMatrix) final;
+		void setBranchIdx(int i) final;
 	};
 }
 }

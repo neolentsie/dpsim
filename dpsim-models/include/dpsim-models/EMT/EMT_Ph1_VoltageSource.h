@@ -10,6 +10,7 @@
 
 #include <dpsim-models/MNASimPowerComp.h>
 #include <dpsim-models/Solver/MNAInterface.h>
+#include <dpsim-models/Solver/EigenvalueCompInterface.h>
 
 namespace CPS {
 namespace EMT {
@@ -24,7 +25,8 @@ namespace Ph1 {
 	/// a new equation ej - ek = V is added to the problem.
 	class VoltageSource :
 		public MNASimPowerComp<Real>,
-		public SharedFactory<VoltageSource> {
+		public SharedFactory<VoltageSource>,
+		public EigenvalueCompInterface {
 	protected:
 		void updateVoltage(Real time);
 	public:
@@ -55,6 +57,10 @@ namespace Ph1 {
 
 		void mnaCompPreStep(Real time, Int timeStepCount) override;
 		void mnaCompPostStep(Real time, Int timeStepCount, Attribute<Matrix>::Ptr &leftVector) override;
+
+		// Implementation of EigenExtractCompInterface methods
+		void stampEigenvalueMatrices(Matrix& signMatrix, Matrix& discretizationMatrix, Matrix& branchNodeIncidenceMatrix) final;
+		void setBranchIdx(int i) final;
 
 		/// Add MNA pre step dependencies
 		void mnaCompAddPreStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes) override;
