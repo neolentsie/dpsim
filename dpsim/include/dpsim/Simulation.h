@@ -224,6 +224,10 @@ namespace DPsim {
 		/// Create the schedule for the independent tasks
 		void schedule();
 
+		// ### Eigenvalue extraction ###
+		/// Extract eigenvalues from power system conductance matrix
+		void extractEigenvalues();
+
 		/// Schedule an event in the simulation
 		void addEvent(Event::Ptr e) {
 			mEvents.addEvent(e);
