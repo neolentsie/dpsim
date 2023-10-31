@@ -304,6 +304,16 @@ void MnaSolverDirect<VarType>::solveWithHarmonics(Real time, Int timeStepCount, 
 }
 
 template <typename VarType>
+void MnaSolverDirect<VarType>::calculateStateMatrix()
+{
+	// TODO: [Georgii] use back substitution of factorized power system matrix instead of inversion (performance)
+	SPDLOG_LOGGER_INFO(mSLog, "power system matrix: {}", Logger::matrixToString(mSwitchedMatrices[mCurrentSwitchStatus][0]));
+	mSLog->flush();
+	Matrix intermediateResult = ((Matrix)mSwitchedMatrices[mCurrentSwitchStatus][0]).inverse() * mNodeBranchIncidenceMatrix;
+	mStateMatrix = mSignMatrix + mDiscretizationMatrix * mBranchNodeIncidenceMatrix * intermediateResult;
+}
+
+template <typename VarType>
 void MnaSolverDirect<VarType>::logSystemMatrices() {
 	if (mFrequencyParallel) {
 		for (UInt i = 0; i < mSwitchedMatrices[std::bitset<SWITCH_NUM>(0)].size(); ++i) {
