@@ -102,6 +102,12 @@ namespace DPsim {
 		using MnaSolver<VarType>::mSolveTimes;
 		using MnaSolver<VarType>::mRecomputationTimes;
 		using MnaSolver<VarType>::mListVariableSystemMatrixEntries;
+		// ### Eigenvalue extraction ###
+		using MnaSolver<VarType>::mSignMatrix;
+		using MnaSolver<VarType>::mDiscretizationMatrix;
+		using MnaSolver<VarType>::mBranchNodeIncidenceMatrix;
+		using MnaSolver<VarType>::mNodeBranchIncidenceMatrix;
+		using MnaSolver<VarType>::mStateMatrix;
 
 		// #### General
 		/// Create system matrix
@@ -148,6 +154,9 @@ namespace DPsim {
 
 		/// Returns a pointer to an object of type DirectLinearSolver
 		std::shared_ptr<DirectLinearSolver> createDirectSolverImplementation(CPS::Logger::Log mSLog);
+
+		// ### Eigenvalue extraction ###
+		void calculateStateMatrix() override;
 
 	public:
 		/// Constructor should not be called by users but by Simulation
