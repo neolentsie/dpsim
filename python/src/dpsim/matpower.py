@@ -245,9 +245,9 @@ class Reader:
                 # # This mapping does not work with asm uc because Pg and Qg of the slack are equal to zero
                 # # TODO implement initial reactive power for slack in Dpsim.
                 
-                #self.map_network_injection(index, bus_index, map_network_injection)
-                self.map_synchronous_machine(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.VD,
-                                             with_pss=with_pss, with_tg=with_tg, with_avr=with_avr)
+                self.map_network_injection(index, bus_index, dpsimpy_components)
+                #self.map_synchronous_machine(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.VD,
+                #                             with_pss=with_pss, with_tg=with_tg, with_avr=with_avr)
 
                 # check if there is a load connected to slack bus (and create it)
                 self.map_energy_consumer(index, bus_index, dpsimpy_components, bus_type=dpsimpy.PowerflowBusType.VD)
