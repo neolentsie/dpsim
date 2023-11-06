@@ -1,0 +1,129 @@
+/* Copyright 2017-2021 Institute for Automation of Complex Power Systems,
+ *                     EONERC, RWTH Aachen University
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
+ *********************************************************************************/
+#pragma once
+
+#include <dpsim-models/CompositePowerComp.h>
+#include <dpsim-models/Solver/MNAInterface.h>
+#include <dpsim-models/Definitions.h>
+#include <dpsim-models/EMT/EMT_Ph3_VoltageSource.h>
+#include <dpsim-models/Signal/Gain.h>
+
+
+namespace CPS {
+namespace EMT {
+namespace Ph3 {
+	class VoltageGain :
+		public CompositePowerComp<Real>,
+		public SharedFactory<VoltageGain> {
+	protected:
+
+		// ### General Parameters ###
+
+		/// Simulation step
+		Real mTimeStep;
+
+		// ### Control Subcomponents ###
+
+		/// Gain
+		std::shared_ptr<Signal::Gain> mGain;
+
+		/// Controlled voltage source
+		std::shared_ptr<EMT::Ph3::VoltageSource> mSubCtrledVoltageSource;
+
+
+		// #### solver ####
+		///
+		std::vector<const Matrix*> mRightVectorStamps;
+
+	public:
+		// ### General Parameters ###
+
+
+		// ### Inverter Interfacing Variables ###
+
+		// Control inputs
+		const Attribute<Matrix>::Ptr mVs;
+		const Attribute<Real>::Ptr mK_p;
+
+		// Control outputs
+		/// Voltage as control output after transformation interface
+		const Attribute<Real>::Ptr mGainOutput;
+		const Attribute<Real>::Ptr mGainVoltage;
+		// input, state and output vector for logging
+		const Attribute<Real>::Ptr mGainInputs;
+		const Attribute<Real>::Ptr mGainStates;
+		const Attribute<Real>::Ptr mGainOutputs;
+
+		/// Defines name amd logging level
+		VoltageGain(String name, Logger::Level logLevel = Logger::Level::off)
+			: VoltageGain(name, name, logLevel) {}
+		/// Defines UID, name, logging level and connection trafo existence
+		VoltageGain(String uid, String name, Logger::Level logLevel = Logger::Level::off, Bool withTrafo = false);
+
+		// #### General ####
+		/// Initializes component from power flow data
+		void initializeFromNodesAndTerminals(Real frequency);
+		/// Setter for gengit eral parameters of inverter
+		void setParameters(Real K_p);
+		/// Setter for parameters of control loops
+		void setControllerParameters(Real K_p);
+
+
+		// #### MNA section ####
+		/// Initializes internal variables of the component
+		void mnaParentInitialize(Real omega, Real timeStep, Attribute<Matrix>::Ptr leftVector) override;
+		/// Updates current through the component
+		void mnaCompUpdateCurrent(const Matrix& leftVector) override;
+		/// Updates voltage across component
+		void mnaCompUpdateVoltage(const Matrix& leftVector) override;
+		/// MNA pre step operations
+		void mnaParentPreStep(Real time, Int timeStepCount) override;
+		/// MNA post step operations
+		void mnaParentPostStep(Real time, Int timeStepCount, Attribute<Matrix>::Ptr &leftVector) override;
+		/// Add MNA pre step dependencies
+		void mnaParentAddPreStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes) override;
+		/// Add MNA post step dependencies
+		void mnaParentAddPostStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes, Attribute<Matrix>::Ptr &leftVector) override;
+
+		// #### Control section ####
+		/// Control pre step operations
+		void controlPreStep(Real time, Int timeStepCount);
+		/// Perform step of controller
+		void controlStep(Real time, Int timeStepCount);
+		/// Add control step dependencies
+		void addControlPreStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes);
+		/// Add control step dependencies
+		void addControlStepDependencies(AttributeBase::List &prevStepDependencies, AttributeBase::List &attributeDependencies, AttributeBase::List &modifiedAttributes);
+
+		class ControlPreStep : public CPS::Task {
+		public:
+			ControlPreStep(VoltageGain& VoltageGain) :
+				Task(**VoltageGain.mName + ".ControlPreStep"), mVoltageGain(VoltageGain) {
+					mVoltageGain.addControlPreStepDependencies(mPrevStepDependencies, mAttributeDependencies, mModifiedAttributes);
+			}
+			void execute(Real time, Int timeStepCount) { mVoltageGain.controlPreStep(time, timeStepCount); };
+
+		private:
+			VoltageGain& mVoltageGain;
+		};
+
+		class ControlStep : public CPS::Task {
+		public:
+			ControlStep(VoltageGain& VoltageGain) :
+				Task(**VoltageGain.mName + ".ControlStep"), mVoltageGain(VoltageGain) {
+					mVoltageGain.addControlStepDependencies(mPrevStepDependencies, mAttributeDependencies, mModifiedAttributes);
+			}
+			void execute(Real time, Int timeStepCount) { mVoltageGain.controlStep(time, timeStepCount); };
+
+		private:
+			VoltageGain& mVoltageGain;
+		};
+	};
+}
+}
+}

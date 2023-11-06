@@ -24,9 +24,12 @@ Gain::Gain(String name, Logger::Level logLevel) :
 	mOutputRef(mAttributes->createDynamic<Real>("output_ref")) { }
 
 void Gain::setParameters(Real K_p) {
+	// Input is Gain parameter K_p
     mK_p = K_p;
-
     SPDLOG_LOGGER_INFO(mSLog, "K_p = {}", mK_p);
+
+	**mInputCurr = mK_p;
+    **mInputRef = mK_p;
 }
 
 

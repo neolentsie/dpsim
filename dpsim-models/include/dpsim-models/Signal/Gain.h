@@ -30,8 +30,10 @@ namespace Signal {
 
 		/// This is never explicitely set to reference anything, so the outside code is responsible for setting up the reference.
 		const Attribute<Real>::Ptr mInputRef;
-		/// This is never explicitely set to reference anything, so the outside code is responsible for setting up the reference.
+		/// Value, which goes to outside classes
 		const Attribute<Real>::Ptr mOutputRef;
+
+		
 		/// Previous Input
         const Attribute<Real>::Ptr mInputPrev;
         /// Current Input

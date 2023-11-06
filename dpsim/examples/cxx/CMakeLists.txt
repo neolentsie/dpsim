@@ -28,6 +28,7 @@ set(CIRCUIT_SOURCES
 	# EMT examples
 	Circuits/EMT_CS_RL1.cpp
 	Circuits/EMT_VS_RL1.cpp
+	Circuits/EMT_P_Block.cpp
 	Circuits/EMT_Circuits.cpp
 	Circuits/DP_Basics_EMT_Sims.cpp
 	#Circuits/EMT_ResVS_RL_Switch.cpp
