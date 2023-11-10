@@ -182,7 +182,8 @@ PYBIND11_MODULE(dpsimpy, m) {
 		.def("set_solver_component_behaviour", &DPsim::Simulation::setSolverAndComponentBehaviour)
 		.def("set_direct_solver_implementation", &DPsim::Simulation::setDirectLinearSolverImplementation)
 		.def("set_direct_linear_solver_configuration", &DPsim::Simulation::setDirectLinearSolverConfiguration)
-		.def("log_lu_times", &DPsim::Simulation::logLUTimes);
+		.def("log_lu_times", &DPsim::Simulation::logLUTimes)
+		.def("log_step_times", &DPsim::Simulation::logStepTimes);
 
 	py::class_<DPsim::RealTimeSimulation, DPsim::Simulation>(m, "RealTimeSimulation")
 		.def(py::init<std::string, CPS::Logger::Level>(), "name"_a, "loglevel"_a = CPS::Logger::Level::info)
