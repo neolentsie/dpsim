@@ -36,7 +36,8 @@ RUN dnf --refresh -y install \
 	libxml2-devel \
 	graphviz-devel \
 	spdlog-devel \
-	fmt-devel
+	fmt-devel \
+	gsl-devel
 
 # Install some debuginfos
 RUN dnf -y debuginfo-install \
