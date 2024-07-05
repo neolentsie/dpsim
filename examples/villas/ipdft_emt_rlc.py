@@ -20,14 +20,14 @@ def villas():
                         'name': 'v1_0',
                         'type': 'float'
                     },
-                    {
-                        'name': 'v1_1',
-                        'type': 'float'
-                    },
-                    {
-                        'name': 'v1_2',
-                        'type': 'float'
-                    },
+                    # {
+                    #     'name': 'v1_1',
+                    #     'type': 'float'
+                    # },
+                    # {
+                    #     'name': 'v1_2',
+                    #     'type': 'float'
+                    # },
                 ]
             },
             'out': {
@@ -37,19 +37,23 @@ def villas():
         'siggen': 
         {
             'type': "signal",
-            'signal': "sine",
-            'frequency': 50.0,
-            'amplitude': 20.0,
-            'phase': 0.0,
+            'signal': ["pulse", "sine"],
+            'values': 2,
+            'pulse_low': [0.,0.],
+            'pulse_high': [5.,0.],
+		    'pulse_width': [20., 0.],
+            'frequency': [1.0, 50.0],
+            'amplitude': [0.0, 20.0],
+            'phase': [0.0, 0.0],
             'rate': 1000,
         },
         'file1': {
             'type': 'file',
-            'uri': f'{base}-results1-%y-%m-%d_%H_%M_%S.csv'
+            'uri': './results1-%y-%m-%d_%H_%M_%S.csv'
         },
         'file2': {
             'type': 'file',
-            'uri': f'{base}-results2-%y-%m-%d_%H_%M_%S.csv'
+            'uri': f'{base}/results2-%y-%m-%d_%H_%M_%S.csv'
         },
     }
 
@@ -60,51 +64,62 @@ def villas():
             'hooks': 
             [
                 {
+                    'type': "pps_ts",
+                    'signal': "pulse",
+                    'threshold': 2.0,
+                    'enabled': True,
+                    'expected_smp_rate': 1000
+                },
+                {
                     'type': "ip-dft-pmu",
                     'enabled': True,
                     'estimation_range': 10.0,
                     'nominal_freq': 50.0,
                     'number_plc': 10.0,
                     'sample_rate': 1000,
-                    'dft_rate': 1,
+                    'dft_rate': 5,
                     'window_type': "hann",
                     'signals': ["sine"],   # CHANGE NAME OF THE SIGNAL TO WHICH HOOK NEEDS TO BE APPLIED
                     'angle_unit': "rad",
                     'timestamp_align': "center",
                     'add_channel_name': True,
-                    'phase_offset': 0.0,
+                    'phase_offset': 70.0,
                     #'frequency_offset': 0.0015,
                     'amplitude_offset': 0.0
                 }
             ]
         },
-        {
-            'in': 'mqtt',
-            'out': 'file2',
-            'hooks': 
-            [
-                {
-                    'type': "print"
-                },
-                # {
-                #     'type': "ip-dft-pmu",
-                #     'enabled': True,
-                #     'estimation_range': 10.0,
-                #     'nominal_freq': 50.0,
-                #     'number_plc': 10.0,
-                #     'sample_rate': 1000,
-                #     'dft_rate': 1,
-                #     'window_type': "hann",
-                #     'signals': ["v1_0"],
-                #     'angle_unit': "rad",
-                #     'timestamp_align': "center",
-                #     'add_channel_name': True,
-                #     'phase_offset': 0.0,
-                #     #'frequency_offset': 0.0015,
-                #     'amplitude_offset': 0.0
-                # }, 
-            ]
-        }
+        # {
+        #     'in': 'mqtt',
+        #     'out': 'file2',
+        #     'hooks': 
+        #     [
+        #         {
+        #             'type': "pps_ts",
+        #             'signal': "pulse",
+        #             'threshold': 2.0,
+        #             'enabled': True,
+        #             'expected_smp_rate': 1000
+        #         },
+        #         {
+        #             'type': "ip-dft-pmu",
+        #             'enabled': True,
+        #             'estimation_range': 10.0,
+        #             'nominal_freq': 50.0,
+        #             'number_plc': 10.0,
+        #             'sample_rate': 1000,
+        #             'dft_rate': 5,
+        #             'window_type': "hann",
+        #             'signals': ["v1_0"],
+        #             'angle_unit': "rad",
+        #             'timestamp_align': "center",
+        #             'add_channel_name': True,
+        #             'phase_offset': 0.0,
+        #             #'frequency_offset': 0.0015,
+        #             'amplitude_offset': 0.0
+        #         }, 
+        #     ]
+        # }
     ]
 
     config = {
@@ -116,7 +131,7 @@ def villas():
 def dpsim():
     sim_name = "ipdft_emt_rlc"
     time_step = 0.00005
-    final_time = 1
+    final_time = 10
     dpsimpy.Logger.set_log_dir('logs/' + sim_name)
 
     # Nodes
@@ -125,7 +140,7 @@ def dpsim():
 
     # Components
     vs = dpsimpy.emt.ph3.VoltageSource("vs1")
-    vs.set_parameters(dpsimpy.Math.single_phase_variable_to_three_phase(complex(100000, 0)), 50)
+    vs.set_parameters(dpsimpy.Math.single_phase_variable_to_three_phase(complex(20, 0)), 50)
 
     res = dpsimpy.emt.ph3.Resistor("R1", dpsimpy.LogLevel.debug)
     res.set_parameters(dpsimpy.Math.single_phase_parameter_to_three_phase(100))
@@ -161,8 +176,8 @@ def dpsim():
     
     intf = dpsimpyvillas.InterfaceVillas(name="dpsim-mqtt", config=intf_config)
     intf.export_attribute(n1.attr('v').derive_coeff(0,0), 0)
-    intf.export_attribute(n1.attr('v').derive_coeff(1,0), 1)
-    intf.export_attribute(n1.attr('v').derive_coeff(2,0), 2)
+    # intf.export_attribute(n1.attr('v').derive_coeff(1,0), 1)
+    # intf.export_attribute(n1.attr('v').derive_coeff(2,0), 2)
     sim.add_interface(intf)
     return sim, intf
 
